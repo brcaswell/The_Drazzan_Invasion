@@ -1,0 +1,27 @@
+{
+  "name": "@drazzan/wasm-server",
+  "version": "1.0.0",
+  "description": "WebAssembly game server for decentralized Drazzan Invasion multiplayer",
+  "main": "build/game-server.js",
+  "scripts": {
+    "build": "asc src/game-server.ts --target release --outFile build/game-server.wasm --textFile build/game-server.wat --sourceMap",
+    "build:debug": "asc src/game-server.ts --target debug --outFile build/game-server-debug.wasm --textFile build/game-server-debug.wat --sourceMap",
+    "optimize": "wasm-opt -O3 build/game-server.wasm -o build/game-server.wasm",
+    "test": "npm run build && node test/test-server.js",
+    "dev": "npm run build:debug && node test/test-server.js"
+  },
+  "devDependencies": {
+    "assemblyscript": "^0.27.0",
+    "@assemblyscript/loader": "^0.27.0"
+  },
+  "dependencies": {},
+  "keywords": [
+    "webassembly",
+    "game-server",
+    "p2p",
+    "assemblyscript",
+    "multiplayer"
+  ],
+  "author": "Drazzan Invasion Team",
+  "license": "MIT"
+}

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>The Drazzan Invasion</title>
+    <meta name="description" content="Decentralized multiplayer space shooter with peer-to-peer WebAssembly servers">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Drazzan Invasion">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/icon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180x180.png">
+    <link rel="mask-icon" href="assets/icons/safari-pinned-tab.svg" color="#000000">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- PWA & WebAssembly Scripts (Load First) -->
+    <script src="js/pwa/service-worker-bridge.js"></script>
+    <script src="js/pwa/network-manager.js"></script>
+    <script src="js/pwa/peer-server.js"></script>
+    <script src="js/pwa/wasm-loader.js"></script>
+    
+    <!-- Multiplayer Game Mode System -->
+    <script type="module" src="js/pwa/single-player-game.js"></script>
+    <script type="module" src="js/pwa/multiplayer-game.js"></script>
+    <script type="module" src="js/pwa/game-mode-ui.js"></script>
+    <script type="module" src="js/pwa/game-mode-manager.js"></script>
+    <script defer src="js/pwa/integration-bridge.js"></script>
+    
+    <!-- ✅ Game Scripts -->
+    <script defer src="js/canvas.js"></script>
+    <script defer src="js/config.js"></script>
+    <script defer src="js/player.js"></script>
+    <script defer src="js/asteroids.js"></script>
+    <script defer src="js/lasers.js"></script>
+    <script defer src="js/collisions.js"></script>
+    <script defer src="js/explosions.js"></script>
+    <script defer src="js/scoreboard.js"></script>
+    <script defer src="js/input.js"></script>
+    <script defer src="js/enemy.js"></script>
+    <script defer src="js/bossLaser.js"></script>
+    <script defer src="js/enemyLaser.js"></script>
+    <script defer src="js/powerup.js"></script>
+    <script defer src="js/gameloop.js"></script> <!-- ✅ gameloop.js must be AFTER enemy.js -->
+    <script defer src="js/intro.js"></script>
+    <script defer src="js/main.js"></script>
+
+    <style>
+        /* ✅ Prevent scrolling on mobile */
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: black;
+            touch-action: none;
+        }
+
+        /* ✅ Start Button (Centered) */
+        #startButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-size: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            background-color: white;
+            color: black;
+            border: none;
+        }
+
+        /* ✅ Shoot Button (Mobile-Friendly) */
+        #shootButton {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            font-size: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            background-color: red;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- 🚀 Game Thumbnail (Displayed Before Start) -->
+    <div id="gameThumbnailContainer">
+        <img id="gameThumbnail" src="assets/game_thumbnail.jpg" alt="Game Thumbnail">
+    </div>
+
+    <!-- 🚀 Start Button -->
+    <button id="startButton">Start Game</button>
+</body>
+
+</html>

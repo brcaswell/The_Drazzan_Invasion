@@ -1,0 +1,15 @@
+{
+  "buildTime": "2025-10-05T00:00:00Z",
+  "modules": {
+    "gameServer": {
+      "type": "placeholder",
+      "size": 8,
+      "fallback": "JavaScript implementation available"
+    }
+  },
+  "notes": [
+    "This is a minimal WebAssembly build for development",
+    "The JavaScript fallback provides full functionality",
+    "Future versions will include optimized WASM implementation"
+  ]
+}
