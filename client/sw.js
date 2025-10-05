@@ -3,17 +3,18 @@ const CACHE_URLS = [
   '/',
   '/index.html',
   '/css/styles.css',
-  // JavaScript files
+  // Core JavaScript files
   '/js/asteroids.js',
   '/js/bossLaser.js',
   '/js/canvas.js',
   '/js/collisions.js',
   '/js/config.js',
+  '/js/debug-console.js',
   '/js/enemy.js',
   '/js/enemyLaser.js', 
   '/js/explosions.js',
+  '/js/feature-flags.js',
   '/js/gameloop.js',
-  '/js/gameloop-extended.js',
   '/js/input.js',
   '/js/intro.js',
   '/js/lasers.js',
@@ -22,10 +23,16 @@ const CACHE_URLS = [
   '/js/powerup.js',
   '/js/scoreboard.js',
   '/js/utils.js',
-  // PWA specific files
+  // PWA and multiplayer files
   '/js/pwa/service-worker-bridge.js',
   '/js/pwa/network-manager.js',
   '/js/pwa/peer-server.js',
+  '/js/pwa/game-mode-manager.js',
+  '/js/pwa/game-mode-ui.js',
+  '/js/pwa/single-player-game.js',
+  '/js/pwa/multiplayer-game.js',
+  '/js/pwa/integration-bridge.js',
+  '/js/pwa/wasm-loader.js',
   '/wasm/game-server.wasm',
   // Assets
   '/assets/8bit_retro.mp3',
