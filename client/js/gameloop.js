@@ -241,8 +241,8 @@ function update() {
         console.log('[GameLoop] Game timer started');
     }
 
-    // Update game timer (only when not paused)
-    if (!gamePaused && gameStartTime > 0) {
+    // Update game timer (only when not paused and game is not over)
+    if (!gamePaused && !gameOver && gameStartTime > 0) {
         gameTime = Math.floor((Date.now() - gameStartTime - totalPauseTime) / 1000);
         window.gameTime = gameTime;
     }
