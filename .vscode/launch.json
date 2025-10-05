@@ -1,0 +1,89 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "🎮 Launch Game - Direct Browser",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/client/index.html",
+            "webRoot": "${workspaceFolder}/client",
+            "runtimeArgs": [
+                "--disable-web-security",
+                "--disable-features=VizDisplayCompositor",
+                "--allow-file-access-from-files"
+            ],
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "🔧 Debug Game - Console Logging",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/client/index.html",
+            "webRoot": "${workspaceFolder}/client",
+            "runtimeArgs": [
+                "--disable-web-security",
+                "--disable-features=VizDisplayCompositor",
+                "--allow-file-access-from-files",
+                "--enable-logging",
+                "--log-level=1",
+                "--disable-background-networking",
+                "--auto-open-devtools-for-tabs"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "trace": true
+        },
+        {
+            "name": "🌐 Launch Game - Live Server",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://127.0.0.1:5500/client/index.html",
+            "webRoot": "${workspaceFolder}/client",
+            "preLaunchTask": "Start Live Server",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "🧪 Test Multiplayer Foundation",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/client/index.html",
+            "webRoot": "${workspaceFolder}/client",
+            "runtimeArgs": [
+                "--disable-web-security",
+                "--disable-features=VizDisplayCompositor",
+                "--allow-file-access-from-files",
+                "--enable-logging"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "postDebugTask": "Run Multiplayer Tests"
+        },
+        {
+            "name": "📱 Test PWA Features",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/client/index.html",
+            "webRoot": "${workspaceFolder}/client",
+            "runtimeArgs": [
+                "--disable-web-security",
+                "--disable-features=VizDisplayCompositor",
+                "--allow-file-access-from-files",
+                "--enable-service-worker-on-file"
+            ],
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "🚀 Launch for AI Testing",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/client/index.html",
+            "webRoot": "${workspaceFolder}/client",
+            "runtimeArgs": [
+                "--disable-web-security",
+                "--disable-features=VizDisplayCompositor",
+                "--allow-file-access-from-files",
+                "--remote-debugging-port=9222"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "postDebugTask": "AI Test Suite"
+        }
+    ]
+}

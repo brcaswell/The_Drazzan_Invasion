@@ -69,6 +69,8 @@ The_Drazzan_Invasion/
 2. **No Build Required**: Open `client/index.html` directly in browser
 3. **Development Server**: Use VS Code Live Server or `npx http-server`
 4. **Testing**: Browser console → `gameIntegration.test()`
+5. **Debug Console**: Press `Ctrl+~` in single-player mode for developer commands
+6. **VS Code Setup**: Use provided launch configurations for direct browser debugging
 
 ## 🎯 **Game Modes & Implementation Status**
 
@@ -82,6 +84,16 @@ Core infrastructure for P2P multiplayer is complete:
 - **Lobby System**: UI and backend for join/create games with shareable room codes
 - **Host Migration**: Framework for automatic failover if host disconnects
 - **State Synchronization**: Architecture for real-time game state across players
+
+### **🔧 Developer Tools & Debugging** (New)
+Enhanced development workflow with comprehensive debugging capabilities:
+- **Debug Console**: In-game console with game progression commands (`Ctrl+~`)
+  - Skip to boss fight, adjust level/score, toggle invincibility
+  - Game state inspection and variable synchronization
+  - Case-sensitive commands with autocomplete support
+- **VS Code Integration**: Launch configurations for direct browser testing
+- **Feature Flag System**: Runtime configuration for enabling/disabling features
+- **Enhanced Game Timer**: Proper pause/resume functionality with formatted display
 
 *Note: Infrastructure is complete, but actual multiplayer gameplay is still in development.*
 
@@ -143,6 +155,25 @@ gameIntegration.test()              // Run full system validation
 gameIntegration.validateComponents() // Check component loading
 gameIntegration.testMultiplayer()   // Test P2P functionality
 ```
+
+### **Debug Console** (Single Player Only)
+The game includes a developer debug console for testing and cheats:
+
+**Activation**: Press `~` or `F12` during single-player gameplay
+
+**Available Commands**:
+- `skipToBoss` - Jump directly to Level 4 boss fight
+- `setLevel <1-4>` - Skip to any level
+- `invincible` - Toggle player invincibility
+- `doubleFire` - Toggle enhanced firing mode
+- `killAll` - Clear all enemies from screen
+- `addLives <number>` - Add extra lives
+- `setScore <number>` - Modify current score
+- `gameState` - Display current game variables
+- `features` - Show feature flag status
+- `help` - Show all available commands
+
+**Note**: Debug console is only available in single-player mode for game balance.
 
 ## 🎨 **Game Design**
 

@@ -1,0 +1,93 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start Live Server",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "Please start Live Server extension manually by right-clicking client/index.html"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Multiplayer Tests",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "Open browser console and run: gameIntegration.testMultiplayer()"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "AI Test Suite",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "Open browser console and run: gameIntegration.test()"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Validate Game Architecture",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "Browser console commands:",
+                "gameIntegration.validateComponents()",
+                "gameIntegration.test()",
+                "gameIntegration.testMultiplayer()"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Open Game in Default Browser",
+            "type": "shell",
+            "command": "Start-Process",
+            "args": [
+                "client\\index.html"
+            ],
+            "options": {
+                "shell": {
+                    "executable": "powershell.exe"
+                }
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

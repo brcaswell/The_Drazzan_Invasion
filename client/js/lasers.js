@@ -19,6 +19,6 @@ class Laser {
 
 
 const lasers = [];
-function shootLaser() {
-    lasers.push(new Laser(player.x + player.width / 2 - 2, player.y));
-}
+
+// Make lasers array available globally
+window.lasers = lasers;

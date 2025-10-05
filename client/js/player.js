@@ -16,7 +16,7 @@ class Player {
         if (keys["ArrowUp"] && this.y > 0) this.y -= this.speed;
         if (keys["ArrowDown"] && this.y < canvas.height - this.height) this.y += this.speed;
     }
-    
+
 
     draw(ctx) {
         ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
@@ -24,3 +24,6 @@ class Player {
 }
 
 const player = new Player();
+
+// Make player globally accessible for debugging and PWA integration
+window.player = player;

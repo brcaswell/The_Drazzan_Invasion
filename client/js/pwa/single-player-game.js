@@ -9,7 +9,7 @@ class SinglePlayerGame {
             gameOver: false,
             asteroidIncreaseTimer: 0
         };
-        
+
         // References to existing game components
         this.canvas = null;
         this.player = null;
@@ -17,7 +17,7 @@ class SinglePlayerGame {
         this.asteroids = [];
         this.explosions = [];
         this.keys = {};
-        
+
         // Game configuration
         this.config = {
             maxAsteroids: 5,
@@ -30,37 +30,49 @@ class SinglePlayerGame {
     // Initialize single player game
     initialize() {
         console.log('[SinglePlayer] Initializing single player game');
-        
-        // Ensure all global game objects are available
-        this.validateGameComponents();
-        
-        // Setup game state
-        this.setupGameState();
-        
-        // Start the game loop
-        this.startGameLoop();
-        
-        this.isActive = true;
-        console.log('[SinglePlayer] Single player game initialized');
+
+        // Use the existing startGame function which handles the proper flow:
+        // startGame() -> playIntro() -> gameLoop()
+        if (typeof startGame === 'function') {
+            console.log('[SinglePlayer] Using existing startGame function');
+            startGame();
+            this.isActive = true;
+
+            // Enable debug console for single player
+            if (window.debugConsole) {
+                window.debugConsole.enabled = true;
+                console.log('[SinglePlayer] Debug console enabled (Press ~ or F12)');
+            }
+
+            console.log('[SinglePlayer] Single player game started via startGame()');
+        } else {
+            console.error('[SinglePlayer] startGame function not available, falling back to custom initialization');
+            // Fallback to the custom initialization
+            this.validateGameComponents();
+            this.setupGameState();
+            this.startGameLoop();
+            this.isActive = true;
+            console.log('[SinglePlayer] Single player game initialized via fallback');
+        }
     }
 
     // Validate that all required game components are loaded
     validateGameComponents() {
         const requiredGlobals = [
-            'canvas', 'player', 'lasers', 'asteroids', 'explosions', 
+            'canvas', 'player', 'lasers', 'asteroids', 'explosions',
             'keys', 'score', 'gameOver', 'CONFIG'
         ];
-        
-        const missing = requiredGlobals.filter(name => 
+
+        const missing = requiredGlobals.filter(name =>
             typeof window[name] === 'undefined'
         );
-        
+
         if (missing.length > 0) {
             console.warn('[SinglePlayer] Missing game components:', missing);
             console.log('[SinglePlayer] Attempting to initialize missing components...');
             this.initializeMissingComponents(missing);
         }
-        
+
         // Set references to global objects
         this.canvas = window.canvas;
         this.player = window.player;
@@ -78,13 +90,13 @@ class SinglePlayerGame {
             window.canvas = new Canvas();
             console.log('[SinglePlayer] Initialized canvas');
         }
-        
+
         // Initialize player if missing
         if (missing.includes('player') && typeof Player !== 'undefined') {
             window.player = new Player();
             console.log('[SinglePlayer] Initialized player');
         }
-        
+
         // Initialize arrays if missing
         if (missing.includes('lasers')) {
             window.lasers = [];
@@ -98,7 +110,7 @@ class SinglePlayerGame {
         if (missing.includes('keys')) {
             window.keys = {};
         }
-        
+
         // Initialize game state if missing
         if (missing.includes('score')) {
             window.score = 0;
@@ -106,7 +118,7 @@ class SinglePlayerGame {
         if (missing.includes('gameOver')) {
             window.gameOver = false;
         }
-        
+
         // Initialize config if missing
         if (missing.includes('CONFIG')) {
             window.CONFIG = {
@@ -123,20 +135,20 @@ class SinglePlayerGame {
         window.score = 0;
         window.gameOver = false;
         this.gameState.asteroidIncreaseTimer = 0;
-        
+
         // Clear arrays
         window.lasers.length = 0;
         window.asteroids.length = 0;
         window.explosions.length = 0;
-        
+
         // Reset player position if player exists
         if (window.player && window.player.reset) {
             window.player.reset();
         }
-        
+
         // Spawn initial asteroids
         this.spawnInitialAsteroids();
-        
+
         console.log('[SinglePlayer] Game state initialized');
     }
 
@@ -155,12 +167,13 @@ class SinglePlayerGame {
 
     // Start the single player game loop
     startGameLoop() {
-        // If there's already a game loop running, use it
+        // If there's already a game loop function, call it directly
         if (typeof gameLoop === 'function') {
-            console.log('[SinglePlayer] Using existing game loop');
+            console.log('[SinglePlayer] Starting existing game loop');
+            gameLoop();
             return;
         }
-        
+
         // If there's an update function, wrap it in our own loop
         if (typeof update === 'function') {
             console.log('[SinglePlayer] Starting game loop with existing update function');
@@ -180,22 +193,22 @@ class SinglePlayerGame {
                 }
                 return;
             }
-            
+
             // Use existing update function
             if (typeof update === 'function') {
                 update();
             }
-            
+
             // Use existing draw function or create our own
             if (typeof draw === 'function') {
                 draw();
             } else {
                 this.draw();
             }
-            
+
             requestAnimationFrame(gameLoop);
         };
-        
+
         gameLoop();
     }
 
@@ -208,37 +221,37 @@ class SinglePlayerGame {
                 }
                 return;
             }
-            
+
             this.updateGame();
             this.drawGame();
-            
+
             requestAnimationFrame(gameLoop);
         };
-        
+
         gameLoop();
     }
 
     // Custom update logic (fallback)
     updateGame() {
         if (!this.player) return;
-        
+
         // Update player
         if (this.player.move) {
             this.player.move(this.keys);
         }
-        
+
         // Update lasers
         this.updateLasers();
-        
+
         // Update asteroids
         this.updateAsteroids();
-        
+
         // Update explosions
         this.updateExplosions();
-        
+
         // Check collisions
         this.checkCollisions();
-        
+
         // Spawn new asteroids
         this.manageAsteroidSpawning();
     }
@@ -253,7 +266,7 @@ class SinglePlayerGame {
                 // Basic laser movement
                 laser.y -= laser.speed || 5;
             }
-            
+
             // Remove lasers that are off screen
             if (laser.y < 0) {
                 this.lasers.splice(i, 1);
@@ -271,7 +284,7 @@ class SinglePlayerGame {
                 // Basic asteroid movement
                 asteroid.y += asteroid.speed || 2;
             }
-            
+
             // Remove asteroids that are off screen
             if (asteroid.y > (this.canvas?.height || 600)) {
                 this.asteroids.splice(i, 1);
@@ -309,21 +322,21 @@ class SinglePlayerGame {
                 }
             }
         }
-        
+
         // Laser-asteroid collisions
         for (let i = this.lasers.length - 1; i >= 0; i--) {
             for (let j = this.asteroids.length - 1; j >= 0; j--) {
                 if (this.checkCollision(this.lasers[i], this.asteroids[j])) {
                     // Create explosion
                     this.createExplosion(this.asteroids[j].x, this.asteroids[j].y);
-                    
+
                     // Remove laser and asteroid
                     this.lasers.splice(i, 1);
                     this.asteroids.splice(j, 1);
-                    
+
                     // Increase score
                     window.score += 10;
-                    
+
                     break;
                 }
             }
@@ -335,13 +348,13 @@ class SinglePlayerGame {
         if (typeof checkCollision === 'function') {
             return checkCollision(obj1, obj2);
         }
-        
+
         // Basic circular collision detection
         const dx = obj1.x - obj2.x;
         const dy = obj1.y - obj2.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         const minDistance = (obj1.size || 20) + (obj2.size || 20);
-        
+
         return distance < minDistance;
     }
 
@@ -369,7 +382,7 @@ class SinglePlayerGame {
             this.config.asteroidSpawnRate = Math.max(this.config.asteroidSpawnRate - 5, 40);
             this.gameState.asteroidIncreaseTimer = 0;
         }
-        
+
         // Spawn new asteroids
         if (this.asteroids.length < this.config.maxAsteroids) {
             if (Math.random() * this.config.asteroidSpawnRate < 1) {
@@ -399,18 +412,18 @@ class SinglePlayerGame {
     // Custom draw logic (fallback)
     drawGame() {
         if (!this.canvas) return;
-        
+
         const ctx = this.canvas.getContext('2d');
         if (!ctx) return;
-        
+
         // Clear canvas
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
+
         // Draw player
         if (this.player && this.player.draw) {
             this.player.draw(ctx);
         }
-        
+
         // Draw lasers
         this.lasers.forEach(laser => {
             if (laser.draw) {
@@ -420,7 +433,7 @@ class SinglePlayerGame {
                 ctx.fillRect(laser.x - 2, laser.y - 5, 4, 10);
             }
         });
-        
+
         // Draw asteroids
         this.asteroids.forEach(asteroid => {
             if (asteroid.draw) {
@@ -432,7 +445,7 @@ class SinglePlayerGame {
                 ctx.fill();
             }
         });
-        
+
         // Draw explosions
         this.explosions.forEach(explosion => {
             if (explosion.draw) {
@@ -444,7 +457,7 @@ class SinglePlayerGame {
                 ctx.fill();
             }
         });
-        
+
         // Draw score
         this.drawScore(ctx);
     }
@@ -466,15 +479,15 @@ class SinglePlayerGame {
     // Handle game over state
     handleGameOver() {
         this.isActive = false;
-        
+
         // Show game over screen
         console.log(`[SinglePlayer] Game Over! Final Score: ${window.score}`);
-        
+
         // Call existing game over function if available
         if (typeof triggerGameOver === 'function') {
             triggerGameOver();
         }
-        
+
         // Notify the game mode manager
         if (this.manager) {
             this.manager.handleGameEnd({
@@ -483,7 +496,7 @@ class SinglePlayerGame {
                 reason: 'player_died'
             });
         }
-        
+
         // Show option to restart
         setTimeout(() => {
             if (confirm('Game Over! Play again?')) {
@@ -497,6 +510,16 @@ class SinglePlayerGame {
     // Restart the game
     restart() {
         console.log('[SinglePlayer] Restarting game');
+
+        // Use the global restart function if available
+        if (typeof window.restartGame === 'function') {
+            console.log('[SinglePlayer] Using global restartGame function');
+            window.restartGame();
+            return;
+        }
+
+        // Fallback to re-initialization
+        console.log('[SinglePlayer] Using fallback restart method');
         this.setupGameState();
         this.isActive = true;
         this.startGameLoop();

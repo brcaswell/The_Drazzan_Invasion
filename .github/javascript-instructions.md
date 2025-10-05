@@ -158,3 +158,91 @@ git add docs/gameloop-analysis.md      # Updated analysis
 - **Integration Logic**: Human oversight needed for game-specific logic
 - **Performance**: AI can suggest optimizations, humans validate impact
 - **Compatibility**: AI helps identify breaking changes, humans make decisions
+
+## Session-Specific Learning Patterns
+
+### Global State Synchronization
+**Critical Pattern**: Local variables must be synchronized with window globals
+```javascript
+// ❌ Wrong: Only updating local variable
+level = 4;
+
+// ✅ Correct: Synchronize with window object
+level = 4;
+window.level = level;
+
+// ✅ Better: Update both in functions that modify state
+function levelUp() {
+    level++;
+    window.level = level;  // Always sync globals
+    // ... rest of level up logic
+}
+```
+
+### Debug Console Integration
+**Pattern**: Enable debugging without breaking game balance
+```javascript
+// Single-player only debug features
+if (gameModeManager?.currentMode === 'single') {
+    window.debugConsole?.enable();
+}
+
+// Command implementations should validate game state
+skipToBoss() {
+    const required = ['level', 'enemiesDestroyed', 'enemiesNeeded'];
+    const missing = required.filter(v => typeof window[v] === 'undefined');
+    if (missing.length > 0) {
+        return `Missing: ${missing.join(', ')}. Start single player first.`;
+    }
+    // ... safe to proceed
+}
+```
+
+### Function Return Value Handling
+**Pattern**: Null-safe return value processing
+```javascript
+// ❌ Wrong: Assumes non-null returns
+const result = cmd.execute(...args);
+this.log(result.toString()); // Crashes if result is null
+
+// ✅ Correct: Null-safe handling
+const result = cmd.execute(...args);
+if (result !== undefined && result !== null) {
+    this.log(result.toString());
+}
+```
+
+### Case-Sensitive Command Systems
+**Pattern**: Respect exact user input instead of forcing case conversion
+```javascript
+// ❌ Wrong: Forces case insensitivity
+const commandKey = command.toLowerCase();
+const cmd = this.commands.get(commandKey);
+
+// ✅ Correct: Respect exact casing
+const cmd = this.commands.get(command);
+
+// Register commands with proper camelCase
+this.commands.set('skipToBoss', { /* ... */ });
+```
+
+### Progressive Enhancement for UI Features
+**Pattern**: Add advanced features without breaking basic functionality
+```javascript
+// Autocomplete that doesn't interfere with basic input
+this.input.addEventListener('keydown', (e) => {
+    // Handle autocomplete first, if active
+    if (this.autocompleteVisible) {
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            this.navigateAutocomplete(-1);
+            return; // Don't fall through to history navigation
+        }
+    }
+    
+    // Fall back to basic functionality
+    if (e.key === 'ArrowUp') {
+        this.navigateHistory(-1);
+    }
+});
+```

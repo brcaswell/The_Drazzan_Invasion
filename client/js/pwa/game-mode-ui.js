@@ -89,6 +89,26 @@ class GameModeUI {
                 .mode-button.primary {
                     background: rgba(0, 255, 136, 0.2);
                 }
+                
+                .mode-button.disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                    border-color: #666;
+                    background: rgba(100, 100, 100, 0.1);
+                }
+                
+                .mode-button.disabled:hover {
+                    background: rgba(100, 100, 100, 0.1);
+                    transform: none;
+                    box-shadow: none;
+                }
+                
+                .coming-soon {
+                    color: #ffaa00;
+                    font-size: 0.8em;
+                    margin-top: 5px;
+                    font-style: italic;
+                }
 
                 .lobby-container {
                     max-width: 800px;
@@ -273,35 +293,49 @@ class GameModeUI {
     // Show mode selection screen
     showModeSelection() {
         this.currentView = 'modeSelection';
+
+        // Check feature flags availability
+        const featureFlags = window.featureFlags;
+        const singlePlayerEnabled = featureFlags ? featureFlags.isEnabled('SINGLE_PLAYER') : true;
+        const coopEnabled = featureFlags ? featureFlags.isEnabled('COOPERATIVE_MODE') : false;
+        const versusEnabled = featureFlags ? featureFlags.isEnabled('VERSUS_MODE') : false;
+
+        // Get status messages for disabled features
+        const coopStatus = featureFlags ? featureFlags.getFeatureStatus('COOPERATIVE_MODE') : { status: 'disabled', message: 'Coming Soon' };
+        const versusStatus = featureFlags ? featureFlags.getFeatureStatus('VERSUS_MODE') : { status: 'disabled', message: 'Coming Soon' };
+
         this.elements.container.innerHTML = `
             <div class="mode-selection">
                 <h1 class="mode-title">THE DRAZZAN INVASION</h1>
                 <p class="mode-subtitle">Choose your battle mode</p>
                 
                 <div class="mode-buttons">
-                    <button class="mode-button primary" onclick="gameModeManager.setMode('single')">
+                    <button class="mode-button primary" onclick="gameModeManager.setMode('single')" ${!singlePlayerEnabled ? 'disabled' : ''}>
                         <h3>🚀 Single Player</h3>
                         <p>Classic solo experience</p>
                     </button>
                     
-                    <button class="mode-button" onclick="gameModeManager.setMode('coop')">
+                    <button class="mode-button ${!coopEnabled ? 'disabled' : ''}" ${!coopEnabled ? 'onclick="return false;"' : 'onclick="gameModeManager.setMode(\'coop\')"'}>
                         <h3>🤝 Cooperative</h3>
                         <p>Team up against the invasion</p>
+                        ${!coopEnabled ? `<div class="coming-soon">${coopStatus.message}</div>` : ''}
                     </button>
                     
-                    <button class="mode-button" onclick="gameModeManager.setMode('versus')">
+                    <button class="mode-button ${!versusEnabled ? 'disabled' : ''}" ${!versusEnabled ? 'onclick="return false;"' : 'onclick="gameModeManager.setMode(\'versus\')"'}>
                         <h3>⚔️ Versus</h3>
                         <p>Compete for the highest score</p>
+                        ${!versusEnabled ? `<div class="coming-soon">${versusStatus.message}</div>` : ''}
                     </button>
                     
-                    <button class="mode-button" onclick="this.showJoinDialog()">
+                    <button class="mode-button ${!(coopEnabled || versusEnabled) ? 'disabled' : ''}" ${!(coopEnabled || versusEnabled) ? 'onclick="return false;"' : 'onclick="this.showJoinDialog()"'}>
                         <h3>🔗 Join Game</h3>
                         <p>Enter a game code</p>
+                        ${!(coopEnabled || versusEnabled) ? '<div class="coming-soon">Available with multiplayer modes</div>' : ''}
                     </button>
                 </div>
                 
                 <p style="color: #888; font-size: 0.9em; margin-top: 20px;">
-                    Multiplayer games use peer-to-peer connections - no servers required!
+                    ${(coopEnabled || versusEnabled) ? 'Multiplayer games use peer-to-peer connections - no servers required!' : 'Multiplayer features coming soon!'}
                 </p>
             </div>
         `;
@@ -314,7 +348,7 @@ class GameModeUI {
         const gameInfo = this.manager.getGameInfo();
         const gameCode = gameInfo.gameCode || 'GENERATING...';
         const shareUrl = `${window.location.origin}${window.location.pathname}?game=${gameCode}`;
-        
+
         this.elements.container.innerHTML = `
             <div class="lobby-container">
                 <div class="lobby-header">
@@ -393,7 +427,7 @@ class GameModeUI {
                 <div id="lobbyMessages"></div>
             </div>
         `;
-        
+
         this.updatePlayerList(this.manager.getActivePlayers());
         this.show();
     }
@@ -402,7 +436,7 @@ class GameModeUI {
     updatePlayerList(players) {
         const container = document.getElementById('playerListContainer');
         if (!container) return;
-        
+
         container.innerHTML = players.map(player => `
             <div class="player-item">
                 <span class="player-name ${player.isHost ? 'player-host' : ''}">
@@ -434,7 +468,7 @@ class GameModeUI {
 
     showCountdown(seconds) {
         this.showMessage(`Starting in <span class="countdown">${seconds}</span>`, 'status-message');
-        
+
         this.countdownTimer = setInterval(() => {
             seconds--;
             if (seconds > 0) {
@@ -479,7 +513,7 @@ class GameModeUI {
         const messagesContainer = document.getElementById('lobbyMessages');
         if (messagesContainer) {
             messagesContainer.innerHTML = `<div class="${className}">${message}</div>`;
-            
+
             // Auto-clear status messages after 3 seconds
             if (className.includes('status-message')) {
                 setTimeout(() => {
@@ -530,7 +564,7 @@ class GameModeUI {
     shareViaLink() {
         const gameInfo = this.manager.getGameInfo();
         const shareUrl = `${window.location.origin}${window.location.pathname}?game=${gameInfo.gameCode}`;
-        
+
         if (navigator.share) {
             navigator.share({
                 title: 'Join my Drazzan Invasion game!',

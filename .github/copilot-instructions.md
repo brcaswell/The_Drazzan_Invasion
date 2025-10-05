@@ -201,4 +201,62 @@ Document architectural decisions made during AI-assisted development:
 - **Alternatives**: Other approaches considered and why they were rejected
 - **Impact**: How changes affect existing systems and future development
 
+## Key Patterns & Lessons Learned
+
+### Debug Tools & Development Experience
+**Pattern**: Debug tools should be contextually appropriate and non-intrusive
+- **Single Player Context**: Debug console only available in single player mode for game balance
+- **User Intent Respect**: Case-sensitive command matching respects developer typing conventions
+- **Progressive Enhancement**: Add autocomplete/intellisense for discoverability without breaking existing workflows
+- **Integration Testing**: Debug tools should provide easy access to test complex game states (e.g., skip to boss fight)
+
+### Feature Flag Architecture
+**Pattern**: Feature flags should control both UI state and functional availability
+- **UI Integration**: Disabled features show "Coming Soon" states rather than hidden UI
+- **Progressive Rollout**: Enable single-player first, then cooperative, then versus modes
+- **Environment Awareness**: Different flag behaviors for development vs production
+- **URL Overrides**: Allow feature enabling via URL parameters for testing
+
+### Global State Management in Vanilla JS
+**Pattern**: Explicit window object synchronization for cross-component access
+- **Variable Exports**: Game state variables must be explicitly exported to `window` object
+- **Synchronization Points**: Update window globals whenever local variables change
+- **Debug Access**: Global variables enable debug console to inspect and modify game state
+- **Component Communication**: PWA components can access game state through window globals
+
+### User Interface Consistency
+**Pattern**: Restart flows should maintain user context and expectations
+- **Context Preservation**: "Play Again" should restart game, not return to menu selection
+- **State Reset**: Proper game state reset without full page reload
+- **User Flow**: Minimize steps between game sessions for better experience
+
+### Command Line Interface Design
+**Pattern**: Modern CLI expectations apply to in-game consoles
+- **Autocomplete**: Ctrl+Space pattern familiar from IDEs and terminals
+- **Smart Matching**: Prefix, exact, and contains matching with priority ordering
+- **Visual Feedback**: Syntax highlighting and selection indication
+- **Keyboard Navigation**: Arrow keys, Tab, Enter, Escape follow standard conventions
+
+### Development Tool Integration
+**Pattern**: Debug tools should integrate with existing development workflows
+- **Browser Console Integration**: Debug commands log to both custom UI and browser console
+- **Feature Discovery**: Help systems should show exact command syntax and examples
+- **Error Reporting**: Clear error messages with actionable suggestions
+- **State Inspection**: Comprehensive game state debugging with variable types and availability
+
+### Command Line Interface Patterns
+**Pattern**: In-game consoles should follow modern terminal UX expectations
+- **Autocomplete System**: Ctrl+Space triggers suggestions with smart matching (prefix > exact > contains)
+- **Navigation Conventions**: Arrow keys for history/selection, Tab/Enter for completion, Escape to close
+- **Visual Feedback**: Syntax highlighting, selection indication, scrollable suggestions
+- **Error Handling**: Graceful null handling, clear error messages, command validation
+- **Context Awareness**: Commands should validate preconditions and provide helpful guidance
+
+### Security & Game Balance Considerations
+**Pattern**: Debug features must not compromise multiplayer integrity
+- **Mode Restrictions**: Debug console only available in single-player mode
+- **Validation Gates**: Always check game mode before enabling debug features
+- **State Isolation**: Debug commands should not affect multiplayer game state
+- **Feature Flags**: Use feature flag system to control debug tool availability
+
 This document should be referenced for all development decisions to maintain consistency with the established architecture and technology choices.

@@ -150,6 +150,83 @@ class IntegrationTests {
     }
 }
 
+### Debug Console Testing (Single Player Only)
+
+#### Debug Console Access
+```javascript
+// Debug console is only available in single player mode
+// 1. Start single player game
+window.gameModeManager.setMode('single');
+
+// 2. Press ~ or F12 to open debug console
+// Console will appear in upper right with green text
+
+// 3. Test commands (case-sensitive)
+skipToBoss     // Jump to Level 4 boss fight
+setLevel 3     // Jump to Level 3  
+invincible     // Toggle player invincibility
+gameState      // Show all game variables
+help           // Show all commands
+```
+
+#### Feature Flag Testing
+```javascript
+// Test feature flag system
+window.featureFlags.logStatus();               // Show all flags
+window.featureFlags.isEnabled('SINGLE_PLAYER'); // Should be true
+window.featureFlags.isEnabled('COOPERATIVE_MODE'); // Should be false
+
+// URL parameter testing
+// Add ?feature_cooperative_mode=true to URL
+// Refresh page and check:
+window.featureFlags.isEnabled('COOPERATIVE_MODE'); // Should be true
+
+// Debug console feature flag commands
+features                    // Show feature status
+enableFeature cooperative_mode   // Enable in development
+disableFeature debug_console    // Disable debug console
+```
+
+#### Global State Validation
+```javascript
+// Verify game state variables are properly exported
+const gameVars = ['level', 'score', 'enemiesDestroyed', 'enemiesNeeded', 
+                  'bossFightStarted', 'bossActive', 'gameOver'];
+
+gameVars.forEach(varName => {
+    console.log(`${varName}:`, {
+        window: window[varName],
+        type: typeof window[varName],
+        defined: window[varName] !== undefined
+    });
+});
+
+// Test variable synchronization
+console.log('Before level change:', window.level);
+// Use debug console: setLevel 4
+console.log('After level change:', window.level); // Should be 4
+```
+
+#### Restart Flow Testing
+```javascript
+// Test proper game restart (not page reload)
+// 1. Play game until game over or victory
+// 2. Click "Play Again" button
+// 3. Verify restart behavior:
+
+// ✅ Should restart with intro sequence
+// ✅ Should not return to mode selection
+// ✅ Should reset all game variables
+// ❌ Should NOT reload the page
+
+// Debug: Monitor page reload
+let pageLoadTime = Date.now();
+console.log('Page loaded at:', pageLoadTime);
+// After restart, check if time changed (indicates page reload)
+console.log('Current time:', Date.now(), 'Diff:', Date.now() - pageLoadTime);
+```
+}
+
 // Run integration tests
 const integrationTests = new IntegrationTests();
 // integrationTests.testSinglePlayerFlow();
