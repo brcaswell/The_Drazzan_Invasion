@@ -11,7 +11,7 @@ const CACHE_URLS = [
   '/js/config.js',
   '/js/debug-console.js',
   '/js/enemy.js',
-  '/js/enemyLaser.js', 
+  '/js/enemyLaser.js',
   '/js/explosions.js',
   '/js/feature-flags.js',
   '/js/gameloop.js',
@@ -56,7 +56,7 @@ const CACHE_URLS = [
 // Install event - cache resources
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');
-  
+
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -76,7 +76,7 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activating service worker...');
-  
+
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -102,9 +102,9 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Skip WebRTC signaling and peer connections
-  if (event.request.url.includes('webrtc') || 
-      event.request.url.includes('signaling') ||
-      event.request.url.includes('.well-known')) {
+  if (event.request.url.includes('webrtc') ||
+    event.request.url.includes('signaling') ||
+    event.request.url.includes('.well-known')) {
     return;
   }
 
@@ -128,7 +128,7 @@ self.addEventListener('fetch', (event) => {
 
             // Clone the response before caching
             const responseToCache = networkResponse.clone();
-            
+
             caches.open(CACHE_NAME)
               .then((cache) => {
                 cache.put(event.request, responseToCache);
@@ -139,14 +139,14 @@ self.addEventListener('fetch', (event) => {
           .catch(() => {
             // Network failed, try to serve offline fallback
             if (event.request.destination === 'document') {
-              return caches.match('/offline.html') || 
-                     caches.match('/index.html');
+              return caches.match('/offline.html') ||
+                caches.match('/index.html');
             }
-            
+
             // For other requests, just fail
-            return new Response('Offline', { 
-              status: 503, 
-              statusText: 'Service Unavailable' 
+            return new Response('Offline', {
+              status: 503,
+              statusText: 'Service Unavailable'
             });
           });
       })
@@ -173,16 +173,16 @@ function updateCacheInBackground(request) {
 // Handle messages from main thread
 self.addEventListener('message', (event) => {
   console.log('[SW] Received message:', event.data);
-  
+
   switch (event.data.type) {
     case 'SKIP_WAITING':
       self.skipWaiting();
       break;
-      
+
     case 'GET_VERSION':
       event.ports[0].postMessage({ version: CACHE_NAME });
       break;
-      
+
     case 'CACHE_URLS':
       // Cache additional URLs on demand
       if (event.data.urls && Array.isArray(event.data.urls)) {
@@ -198,7 +198,7 @@ self.addEventListener('message', (event) => {
           });
       }
       break;
-      
+
     case 'CLEAR_CACHE':
       // Clear specific cache entries
       caches.delete(CACHE_NAME)
@@ -215,12 +215,12 @@ self.addEventListener('message', (event) => {
 // Background sync for game state
 self.addEventListener('sync', (event) => {
   console.log('[SW] Background sync:', event.tag);
-  
+
   switch (event.tag) {
     case 'sync-game-state':
       event.waitUntil(syncGameState());
       break;
-      
+
     case 'sync-peer-discovery':
       event.waitUntil(syncPeerDiscovery());
       break;
@@ -230,7 +230,7 @@ self.addEventListener('sync', (event) => {
 // Push notifications for multiplayer invites
 self.addEventListener('push', (event) => {
   console.log('[SW] Push notification received');
-  
+
   const options = {
     body: 'You have been invited to a multiplayer game!',
     icon: '/assets/icons/icon-192x192.png',
@@ -262,20 +262,20 @@ self.addEventListener('push', (event) => {
 // Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
   console.log('[SW] Notification clicked:', event.action);
-  
+
   event.notification.close();
-  
+
   switch (event.action) {
     case 'join':
       event.waitUntil(
         clients.openWindow('/?mode=join&invite=' + event.notification.data.primaryKey)
       );
       break;
-      
+
     case 'decline':
       // Just close notification
       break;
-      
+
     default:
       // Open app
       event.waitUntil(
