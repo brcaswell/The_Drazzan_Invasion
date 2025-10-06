@@ -1,53 +1,67 @@
-# Development Scripts
+# P2P Development Scripts
 
-This directory contains helper scripts for development workflow.
+This directory contains helper scripts for **P2P WebAssembly PWA** development workflow.
+
+## Architecture Overview
+
+**The Drazzan Invasion** is a **decentralized P2P multiplayer game** with:
+- ✅ Pure client-side JavaScript (runs from `client/index.html`)
+- ✅ WebRTC peer-to-peer networking (no central servers)
+- ✅ WebAssembly game servers (compiled peer servers)
+- ✅ Progressive Web App (offline-capable)
+- ❌ **NO server infrastructure** (Node.js, databases, etc.)
 
 ## Available Scripts
 
-### `dev-setup.sh` / `dev-setup.ps1`
-Initial development environment setup:
-- Copies .env.example to .env
-- Installs server dependencies
-- Sets up Git hooks
+### `start-p2p-dev.ps1`
+Start P2P development environment:
+- Builds WebAssembly modules
+- Starts lightweight nginx for static serving
+- Provides dual ports for P2P testing (8080 & 8081)
+- Enables WebRTC peer connections
 
-### `start-dev.sh` / `start-dev.ps1` 
-Start development environment:
-- Starts Docker containers
-- Runs in development mode with hot reload
-
-### `stop-dev.sh` / `stop-dev.ps1`
-Stop development environment:
-- Stops and removes containers
-- Cleans up volumes (optional)
-
-### `test.sh` / `test.ps1`
-Run tests:
-- Server unit tests
-- Integration tests
-- Client tests (if added)
+### `stop-p2p-dev.ps1`
+Stop P2P development environment:
+- Stops Docker containers
+- Optional WASM build cleanup
 
 ## Usage
 
-### Linux/macOS
-```bash
-# Setup
-chmod +x scripts/*.sh
-./scripts/dev-setup.sh
-
-# Development
-./scripts/start-dev.sh
-./scripts/test.sh
-./scripts/stop-dev.sh
-```
-
-### Windows (PowerShell)
+### Windows (PowerShell) - Primary Platform
 ```powershell
-# Setup
+# Set execution policy (first time only)
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-.\scripts\dev-setup.ps1
 
-# Development
-.\scripts\start-dev.ps1
-.\scripts\test.ps1
-.\scripts\stop-dev.ps1
+# Start P2P development
+.\scripts\start-p2p-dev.ps1
+
+# Test multiplayer P2P
+# Player 1 (Host): http://localhost:8080
+# Player 2 (Peer): http://localhost:8081
+
+# Stop development
+.\scripts\stop-p2p-dev.ps1
 ```
+
+### Alternative: Direct Browser Testing (No Docker)
+```powershell
+# For simple testing without Docker
+Start-Process "client\index.html"
+# Or use VS Code Live Server extension
+```
+
+## Testing P2P Multiplayer
+
+1. **Start Environment**: `.\scripts\start-p2p-dev.ps1`
+2. **Open Host**: Navigate to `http://localhost:8080`
+3. **Select Multiplayer**: Choose host mode in game
+4. **Open Peer**: Navigate to `http://localhost:8081` in different browser window
+5. **Join Game**: Select join mode and connect to host
+6. **Test WebRTC**: Verify P2P connection and WASM game server functionality
+
+## Notes
+
+- **No server setup required** - game runs entirely client-side
+- **WebAssembly modules** are built automatically
+- **Docker is optional** - game works directly from file system
+- **PowerShell is primary** - Windows development focused

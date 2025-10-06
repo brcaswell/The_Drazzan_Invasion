@@ -8,15 +8,15 @@ class NetworkManager {
         this.gameState = null;
         this.signalingServer = null;
         this.localGameServer = null;
-        
+
         // WebRTC configuration
         this.rtcConfig = {
             iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:localhost:3478' }, // Local STUN/TURN server
+                { urls: 'turn:localhost:3478', username: 'testuser', credential: 'testpass' }, // Local TURN server
+                { urls: 'stun:stun.l.google.com:19302' }, // Fallback Google STUN
                 { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                // Add TURN servers for NAT traversal in production
-                // { urls: 'turn:your-turn-server.com:3478', username: 'user', credential: 'pass' }
+                { urls: 'stun:stun2.l.google.com:19302' }
             ],
             iceCandidatePoolSize: 10
         };
@@ -26,10 +26,10 @@ class NetworkManager {
 
     async init() {
         console.log('[P2P] Initializing network manager, peer ID:', this.peerId);
-        
+
         // Initialize signaling (can be decentralized)
         await this.initializeSignaling();
-        
+
         // Set up event listeners
         this.setupEventListeners();
     }
@@ -44,16 +44,25 @@ class NetworkManager {
         // 2. IPFS pubsub
         // 3. Blockchain-based signaling
         // 4. Simple P2P signaling servers
-        
+
         // For now, we'll use a simple fallback with multiple signaling options
         await this.initDecentralizedSignaling();
     }
 
     async initDecentralizedSignaling() {
-        // Try multiple signaling methods in order of preference
+        // Try hybrid signaling first (supports incognito cross-origin)
+        try {
+            await this.initHybridSignaling();
+            console.log('[P2P] Hybrid signaling initialized successfully');
+            return;
+        } catch (error) {
+            console.warn('[P2P] Hybrid signaling failed:', error);
+        }
+
+        // Fallback to original signaling methods
         const signalingMethods = [
             () => this.initIPFSSignaling(),
-            () => this.initWebTorrentSignaling(), 
+            () => this.initWebTorrentSignaling(),
             () => this.initSimpleP2PSignaling(),
             () => this.initBroadcastChannelSignaling() // Local network only
         ];
@@ -72,15 +81,21 @@ class NetworkManager {
         this.initLocalOnlyMode();
     }
 
+    async initHybridSignaling() {
+        // Hybrid signaling with multiple fallback methods
+        this.signalingServer = new HybridSignaling(this.peerId);
+        await this.signalingServer.connect();
+    }
+
     async initIPFSSignaling() {
         // IPFS-based signaling for true decentralization
         if (typeof window.IpfsHttpClient !== 'undefined') {
-            const ipfs = window.IpfsHttpClient.create({ 
-                host: 'ipfs.infura.io', 
-                port: 5001, 
-                protocol: 'https' 
+            const ipfs = window.IpfsHttpClient.create({
+                host: 'ipfs.infura.io',
+                port: 5001,
+                protocol: 'https'
             });
-            
+
             this.signalingServer = new IPFSSignaling(ipfs, this.peerId);
             await this.signalingServer.init();
         } else {
@@ -99,50 +114,39 @@ class NetworkManager {
     }
 
     async initSimpleP2PSignaling() {
-        // Simple P2P signaling server (can be run by community)
-        const signalingUrls = [
-            'wss://signaling1.drazzan.game',
-            'wss://signaling2.drazzan.game',
-            'wss://community-signaling.herokuapp.com'
-        ];
-
-        for (const url of signalingUrls) {
-            try {
-                this.signalingServer = new WebSocketSignaling(url, this.peerId);
-                await this.signalingServer.connect();
-                return;
-            } catch (error) {
-                console.warn('[P2P] Signaling server failed:', url, error);
-            }
-        }
-        
-        throw new Error('No signaling servers available');
+        // WebSocket signaling temporarily disabled for local testing
+        console.log('[P2P] WebSocket signaling not available in local testing mode');
+        throw new Error('WebSocket signaling not available');
     }
 
-    initBroadcastChannelSignaling() {
+    async initBroadcastChannelSignaling() {
         // BroadcastChannel for same-origin communication
         this.signalingServer = new BroadcastChannelSignaling(this.peerId);
+        await this.signalingServer.connect();
     }
 
-    initLocalOnlyMode() {
+    async initLocalOnlyMode() {
         // Fallback to local-only mode with no multiplayer
         console.warn('[P2P] Running in local-only mode');
-        this.signalingServer = new LocalOnlySignaling();
+        this.signalingServer = new LocalOnlySignaling(this.peerId);
+        await this.signalingServer.connect();
     }
 
     setupEventListeners() {
+        console.log('[P2P] Setting up event listeners for signaling server');
         // Handle signaling messages
         if (this.signalingServer) {
-            this.signalingServer.on('offer', (offer, fromPeerId) => {
-                this.handleOffer(offer, fromPeerId);
+            this.signalingServer.on('offer', (data) => {
+                console.log('[P2P] Offer event received from signaling:', data.from);
+                this.handleOffer(data.offer, data.from);
             });
 
-            this.signalingServer.on('answer', (answer, fromPeerId) => {
-                this.handleAnswer(answer, fromPeerId);
+            this.signalingServer.on('answer', (data) => {
+                this.handleAnswer(data.answer, data.from);
             });
 
-            this.signalingServer.on('ice-candidate', (candidate, fromPeerId) => {
-                this.handleIceCandidate(candidate, fromPeerId);
+            this.signalingServer.on('ice-candidate', (data) => {
+                this.handleIceCandidate(data.candidate, data.from);
             });
 
             this.signalingServer.on('peer-joined', (peerId) => {
@@ -156,52 +160,67 @@ class NetworkManager {
         }
     }
 
+    // Check if network manager is connected and ready
+    isConnected() {
+        // Consider connected if signaling server is available and connected
+        return this.signalingServer && this.signalingServer.isConnected;
+    }
+
+    // Generate a user-friendly game code
+    generateGameCode() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+        for (let i = 0; i < 6; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+    }
+
     // Game hosting
     async hostGame() {
         console.log('[P2P] Starting to host game...');
         this.isHost = true;
 
-        // Initialize local WASM game server
-        if (window.wasmLoader && !this.localGameServer) {
-            try {
-                this.localGameServer = await window.wasmLoader.loadWasm();
-                console.log('[P2P] Local game server initialized');
-            } catch (error) {
-                console.error('[P2P] Failed to initialize game server:', error);
-                throw error;
-            }
-        }
+        // Generate user-friendly game code
+        this.gameCode = this.generateGameCode();
+        console.log('[P2P] Generated game code:', this.gameCode);
 
-        // Create game in WASM server
-        if (this.localGameServer) {
-            const gameId = this.localGameServer.createGame(this.peerId);
-            console.log('[P2P] Game created with ID:', gameId);
-        }
+        // Skip WASM initialization for now - focusing on P2P networking
+        console.log('[P2P] Skipping WASM server initialization (P2P-only mode)');
+
+        // Skip WASM game creation - using P2P networking only
+        console.log('[P2P] Using P2P-only mode, no local game server needed');
 
         // Advertise game availability
         if (this.signalingServer) {
+            console.log('[P2P] About to advertise game with signaling server:', this.signalingServer.constructor.name);
             await this.signalingServer.advertiseGame({
                 hostId: this.peerId,
+                gameCode: this.gameCode,
                 gameType: 'drazzan-invasion',
                 maxPlayers: 4,
                 currentPlayers: 1
             });
+            console.log('[P2P] Game advertisement sent successfully');
+        } else {
+            console.error('[P2P] No signaling server available for game advertisement!');
         }
 
-        return this.peerId; // Return game ID (host peer ID)
+        console.log('[P2P] hostGame() completed, returning game code:', this.gameCode);
+        return this.gameCode; // Return user-friendly game code
     }
 
     // Join existing game
     async joinGame(hostPeerId) {
         console.log('[P2P] Joining game hosted by:', hostPeerId);
-        
+
         if (hostPeerId === this.peerId) {
             throw new Error('Cannot join own game');
         }
 
         // Create peer connection to host
         await this.connectToPeer(hostPeerId);
-        
+
         // Wait for connection to be established
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
@@ -212,19 +231,19 @@ class NetworkManager {
                 const connection = this.connections.get(hostPeerId);
                 if (connection && connection.connectionState === 'connected') {
                     clearTimeout(timeout);
-                    
+
                     // Send join request
                     this.sendToPlayer(hostPeerId, {
                         type: 'join_request',
                         playerId: this.peerId
                     });
-                    
+
                     resolve(hostPeerId);
                 } else {
                     setTimeout(checkConnection, 100);
                 }
             };
-            
+
             checkConnection();
         });
     }
@@ -245,7 +264,7 @@ class NetworkManager {
             ordered: false, // Faster for real-time game data
             maxRetransmits: 0
         });
-        
+
         this.setupDataChannel(dataChannel, peerId);
         this.dataChannels.set(peerId, dataChannel);
 
@@ -264,7 +283,7 @@ class NetworkManager {
         // Handle connection state changes
         pc.onconnectionstatechange = () => {
             console.log('[P2P] Connection state with', peerId, ':', pc.connectionState);
-            
+
             if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
                 this.removePeer(peerId);
             }
@@ -308,9 +327,17 @@ class NetworkManager {
     // Handle WebRTC signaling
     async handleOffer(offer, fromPeerId) {
         console.log('[P2P] Received offer from', fromPeerId);
+        console.log('[P2P] Current connections count:', this.connections.size);
+        console.log('[P2P] Existing connection for', fromPeerId, ':', this.connections.has(fromPeerId));
 
         let pc = this.connections.get(fromPeerId);
+        if (pc && pc.connectionState !== 'closed') {
+            console.log('[P2P] Ignoring duplicate offer from', fromPeerId, '- connection exists:', pc.connectionState);
+            return;
+        }
+
         if (!pc) {
+            console.log('[P2P] Creating NEW RTCPeerConnection for', fromPeerId);
             pc = new RTCPeerConnection(this.rtcConfig);
             this.connections.set(fromPeerId, pc);
 
@@ -338,7 +365,7 @@ class NetworkManager {
 
     async handleAnswer(answer, fromPeerId) {
         console.log('[P2P] Received answer from', fromPeerId);
-        
+
         const pc = this.connections.get(fromPeerId);
         if (pc) {
             await pc.setRemoteDescription(answer);
@@ -360,19 +387,23 @@ class NetworkManager {
             case 'join_request':
                 this.handleJoinRequest(message, fromPeerId);
                 break;
-                
+
             case 'player_update':
                 this.handlePlayerUpdate(message, fromPeerId);
                 break;
-                
+
             case 'game_action':
                 this.handleGameAction(message, fromPeerId);
                 break;
-                
+
             case 'game_state':
                 this.handleGameState(message, fromPeerId);
                 break;
-                
+
+            case 'gameStateSync':
+                this.handleGameStateSync(message, fromPeerId);
+                break;
+
             case 'ping':
                 this.sendToPlayer(fromPeerId, { type: 'pong', timestamp: message.timestamp });
                 break;
@@ -382,7 +413,7 @@ class NetworkManager {
     handleJoinRequest(message, fromPeerId) {
         if (this.isHost && this.localGameServer) {
             const success = this.localGameServer.joinGame(0, fromPeerId); // Assuming single game
-            
+
             this.sendToPlayer(fromPeerId, {
                 type: 'join_response',
                 success: success,
@@ -409,7 +440,7 @@ class NetworkManager {
                 message.data
             );
         }
-        
+
         // Relay to other players if host
         if (this.isHost) {
             this.broadcast({
@@ -424,8 +455,42 @@ class NetworkManager {
     handleGameState(message, fromPeerId) {
         // Update local game state from host
         this.gameState = message.gameState;
-        
+
         // Notify game instance
+        if (window.gameInstance && window.gameInstance.updateNetworkGameState) {
+            window.gameInstance.updateNetworkGameState(this.gameState);
+        }
+    }
+
+    handleGameStateSync(message, fromPeerId) {
+        // Only non-hosts should apply external game state
+        if (this.isHost) return;
+
+        console.log('[P2P] Received game state sync from host', fromPeerId, 'timestamp:', message.timestamp);
+
+        // Conflict resolution: only apply state if timestamp is newer than our last received state
+        if (this.gameState && this.gameState.timestamp && message.timestamp <= this.gameState.timestamp) {
+            console.log('[P2P] Ignoring older game state sync (local:', this.gameState.timestamp, 'vs received:', message.timestamp, ')');
+            return;
+        }
+
+        // Update local game state
+        this.gameState = {
+            gameTime: message.gameTime,
+            players: message.players,
+            gameObjects: message.gameObjects,
+            scores: message.scores,
+            timestamp: message.timestamp
+        };
+
+        console.log('[P2P] Applied game state sync with timestamp', message.timestamp);
+
+        // Notify multiplayer game instance to apply the state
+        if (window.multiplayerGame && window.multiplayerGame.applyGameState) {
+            window.multiplayerGame.applyGameState(message);
+        }
+
+        // Also notify the main game instance if it exists
         if (window.gameInstance && window.gameInstance.updateNetworkGameState) {
             window.gameInstance.updateNetworkGameState(this.gameState);
         }
@@ -443,7 +508,7 @@ class NetworkManager {
 
     broadcast(message, excludePeerId = null) {
         const messageStr = JSON.stringify(message);
-        
+
         for (const [peerId, dataChannel] of this.dataChannels) {
             if (peerId !== excludePeerId && dataChannel.readyState === 'open') {
                 dataChannel.send(messageStr);
@@ -458,9 +523,9 @@ class NetworkManager {
             pc.close();
             this.connections.delete(peerId);
         }
-        
+
         this.dataChannels.delete(peerId);
-        
+
         // Notify game of player disconnect
         if (window.gameInstance && window.gameInstance.handlePlayerDisconnect) {
             window.gameInstance.handlePlayerDisconnect(peerId);
@@ -482,10 +547,10 @@ class NetworkManager {
         for (const pc of this.connections.values()) {
             pc.close();
         }
-        
+
         this.connections.clear();
         this.dataChannels.clear();
-        
+
         // Disconnect from signaling
         if (this.signalingServer && this.signalingServer.disconnect) {
             this.signalingServer.disconnect();
@@ -497,7 +562,7 @@ class NetworkManager {
         // Update local game server if hosting
         if (this.isHost && this.localGameServer) {
             this.localGameServer.processGameTick(deltaTime);
-            
+
             // Broadcast game state to all connected peers
             const gameState = this.localGameServer.getGameState();
             if (gameState) {

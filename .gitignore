@@ -2,16 +2,13 @@
 logs/
 *.log
 
-# Environment files
-.env
-.env.local
-.env.production
+# P2P Development only (no server dependencies)
+# WebAssembly build artifacts (keep build directory, ignore temp files)
+client/wasm/build/*.tmp
+client/wasm/build/*.temp
 
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Development containers (P2P testing only)
+# Note: No server node_modules since this is client-side only
 
 # Runtime data
 pids/
@@ -69,21 +66,12 @@ jspm_packages/
 # vuepress build output
 .vuepress/dist
 
-# Serverless directories
-.serverless
-
-# FuseBox cache
-.fusebox/
-
-# DynamoDB Local files
-.dynamodb/
-
-# TernJS port file
-.tern-port
-
-# Docker volumes and data
+# Docker volumes (P2P development only)
 data/
-volumes/
+
+# P2P testing artifacts
+*.p2p-test
+*.webrtc-log
 
 # IDE files
 .vscode/settings.json
@@ -105,10 +93,11 @@ Thumbs.db
 *.tmp
 *.temp
 
-# Database dumps
-*.sql
-*.dump
-
 # Backup files
 *.backup
 *.bak
+
+# P2P WebAssembly specific
+client/wasm/src/*.o
+client/wasm/src/*.bc
+*.wasm.map

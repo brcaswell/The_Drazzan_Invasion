@@ -2,11 +2,37 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Start Live Server",
+            "label": "🐳 Start P2P Development Environment",
             "type": "shell",
-            "command": "echo",
+            "command": "powershell",
             "args": [
-                "Please start Live Server extension manually by right-clicking client/index.html"
+                "-ExecutionPolicy",
+                "RemoteSigned",
+                "-File",
+                "${workspaceFolder}/scripts/start-p2p-dev.ps1"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "isBackground": true,
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "🛑 Stop P2P Development Environment",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-ExecutionPolicy",
+                "RemoteSigned",
+                "-File",
+                "${workspaceFolder}/scripts/stop-p2p-dev.ps1"
             ],
             "group": "build",
             "presentation": {
@@ -18,11 +44,52 @@
             "problemMatcher": []
         },
         {
-            "label": "Run Multiplayer Tests",
+            "label": "🔧 Build WASM Modules (Containerized)",
             "type": "shell",
-            "command": "echo",
+            "command": "docker",
             "args": [
-                "Open browser console and run: gameIntegration.testMultiplayer()"
+                "compose",
+                "-f",
+                "docker-compose.dev.yml",
+                "run",
+                "--rm",
+                "wasm-builder"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "detail": "Build WebAssembly modules in container (no host Node.js required)"
+        },
+        {
+            "label": "🌐 Start Live Server",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "Write-Host 'Starting Live Server...'; Start-Process 'http://127.0.0.1:5500/client/index.html'"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "detail": "Note: Requires Live Server extension to be active"
+        },
+        {
+            "label": "🧪 Test P2P Connection",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "Write-Host 'P2P Testing Instructions:' -ForegroundColor Green; Write-Host '1. Host: http://localhost:8080 (select multiplayer host)' -ForegroundColor Cyan; Write-Host '2. Peer: http://localhost:8081 (select join game)' -ForegroundColor Cyan; Write-Host '3. Browser console: gameIntegration.testMultiplayer()' -ForegroundColor Yellow"
             ],
             "group": "test",
             "presentation": {
@@ -34,11 +101,12 @@
             "problemMatcher": []
         },
         {
-            "label": "AI Test Suite",
+            "label": "🔬 Test WebAssembly",
             "type": "shell",
-            "command": "echo",
+            "command": "powershell",
             "args": [
-                "Open browser console and run: gameIntegration.test()"
+                "-Command",
+                "Write-Host 'WASM Testing Instructions:' -ForegroundColor Green; Write-Host '1. Browser console: window.wasmGameServer' -ForegroundColor Cyan; Write-Host '2. Check: typeof WebAssembly !== undefined' -ForegroundColor Cyan; Write-Host '3. Test: gameIntegration.validateComponents()' -ForegroundColor Yellow"
             ],
             "group": "test",
             "presentation": {
@@ -50,14 +118,29 @@
             "problemMatcher": []
         },
         {
-            "label": "Validate Game Architecture",
+            "label": "🤖 Run AI Test Suite",
             "type": "shell",
-            "command": "echo",
+            "command": "powershell",
             "args": [
-                "Browser console commands:",
-                "gameIntegration.validateComponents()",
-                "gameIntegration.test()",
-                "gameIntegration.testMultiplayer()"
+                "-Command",
+                "Write-Host 'Open browser console and run: gameIntegration.test()' -ForegroundColor Yellow"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "✅ Validate Game Architecture",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "Write-Host 'Browser console commands:' -ForegroundColor Green; Write-Host 'gameIntegration.validateComponents()' -ForegroundColor Cyan; Write-Host 'gameIntegration.test()' -ForegroundColor Cyan; Write-Host 'gameIntegration.testMultiplayer()' -ForegroundColor Yellow"
             ],
             "group": "test",
             "presentation": {

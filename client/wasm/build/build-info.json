@@ -1,15 +1,15 @@
 {
-  "buildTime": "2025-10-05T00:00:00Z",
+  "buildTime": "'$(date -Iseconds)'",
+  "builder": "Docker Emscripten",
   "modules": {
     "gameServer": {
-      "type": "placeholder",
-      "size": 8,
+      "type": "wasm",
       "fallback": "JavaScript implementation available"
     }
   },
   "notes": [
-    "This is a minimal WebAssembly build for development",
-    "The JavaScript fallback provides full functionality",
-    "Future versions will include optimized WASM implementation"
+    "Built in containerized environment",
+    "No host Node.js dependencies required", 
+    "JavaScript fallback provides full functionality"
   ]
 }

@@ -1,0 +1,24 @@
+# Secure coturn TURN/STUN server from official Alpine packages
+FROM alpine:3.18
+
+# Install coturn from official Alpine repositories
+RUN apk add --no-cache coturn
+
+# Create non-root user for security
+RUN addgroup -S coturn && adduser -S coturn -G coturn
+
+# Create directories and set permissions
+RUN mkdir -p /var/lib/coturn && \
+    chown -R coturn:coturn /var/lib/coturn
+
+# Copy configuration template (we'll volume mount the actual config)
+RUN echo "# Coturn configuration - mount your config to /etc/coturn/turnserver.conf" > /etc/coturn/turnserver.conf.template
+
+# Expose standard TURN/STUN ports
+EXPOSE 3478 3478/udp 5349 5349/udp 49152-65535/udp
+
+# Switch to non-root user
+USER coturn
+
+# Default command
+CMD ["turnserver", "-c", "/etc/coturn/turnserver.conf", "--log-file", "stdout"]

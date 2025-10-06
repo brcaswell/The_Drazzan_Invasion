@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # P2P Host - HTTP server for client files
+  drazzan-host:
+    image: nginx:alpine
+    container_name: drazzan-host
+    ports:
+      - "8080:80"
+    volumes:
+      - ./client:/usr/share/nginx/html:ro
+      - ./nginx-p2p.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - p2p-testing
+    restart: unless-stopped
+
+  # P2P Peer - Second instance for testing
+  drazzan-peer:
+    image: nginx:alpine
+    container_name: drazzan-peer
+    ports:
+      - "8081:80"
+    volumes:
+      - ./client:/usr/share/nginx/html:ro
+      - ./nginx-p2p.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - p2p-testing
+    restart: unless-stopped
+
+  # WASM Builder (containerized - no host Node.js required)
+  wasm-builder:
+    build:
+      context: ./client/wasm
+      dockerfile: Dockerfile.wabt
+    container_name: drazzan-wasm-builder
+    working_dir: /app
+    volumes:
+      - ./client/wasm:/app
+    command: [ "sh", "build-container.sh" ]
+    networks:
+      - p2p-testing
+
+  # WebRTC STUN/TURN server for local P2P testing (optional)
+  coturn:
+    build:
+      context: .
+      dockerfile: Dockerfile.coturn
+    container_name: drazzan-turn
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "49160-49200:49160-49200/udp"
+    environment:
+      - TURN_USERNAME=testuser
+      - TURN_PASSWORD=testpass
+    command: >
+      turnserver -n -v -r drazzan-realm -u testuser:testpass -p 3478 --no-dtls --no-tls --log-file stdout
+    networks:
+      - p2p-testing
+
+networks:
+  p2p-testing:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16

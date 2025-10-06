@@ -11,7 +11,7 @@ class MultiplayerGame {
             roundNumber: 1,
             scores: new Map()
         };
-        
+
         this.gameObjects = {
             asteroids: [],
             enemies: [],
@@ -19,7 +19,7 @@ class MultiplayerGame {
             explosions: [],
             powerUps: []
         };
-        
+
         this.config = {
             maxPlayers: 4,
             tickRate: 60,
@@ -27,9 +27,10 @@ class MultiplayerGame {
             maxLatency: 200, // Max acceptable latency
             rollbackFrames: 10 // Frames to keep for rollback
         };
-        
+
         this.stateHistory = [];
         this.lastSync = Date.now();
+        this.lastAppliedTimestamp = 0;
         this.isHost = false;
     }
 
@@ -37,15 +38,15 @@ class MultiplayerGame {
     initialize(mode, isHost = false) {
         this.gameState.mode = mode;
         this.isHost = isHost;
-        
+
         // Load original game components with multiplayer adaptations
         this.loadGameComponents();
-        
+
         // Setup multiplayer-specific systems
         this.setupStateSynchronization();
         this.setupPlayerManagement();
         this.setupGameModeLogic();
-        
+
         console.log(`Multiplayer game initialized - Mode: ${mode}, Host: ${isHost}`);
     }
 
@@ -57,7 +58,7 @@ class MultiplayerGame {
         this.collisions = new Collisions();
         this.explosions = new Explosions();
         this.scoreboard = new Scoreboard();
-        
+
         // Convert single player to multiplayer arrays
         this.adaptSinglePlayerComponents();
     }
@@ -66,7 +67,7 @@ class MultiplayerGame {
     adaptSinglePlayerComponents() {
         // Instead of a single player, maintain player array
         this.gameState.players = new Map();
-        
+
         // Convert global game objects to multiplayer tracking
         this.gameObjects = {
             players: new Map(), // Changed from single player
@@ -101,12 +102,12 @@ class MultiplayerGame {
                 space: false
             }
         };
-        
+
         this.gameState.players.set(playerId, player);
         this.gameObjects.players.set(playerId, player);
         this.gameObjects.lasers.set(playerId, []);
         this.gameState.scores.set(playerId, 0);
-        
+
         console.log(`Player ${playerId} (${playerData.name}) added to game`);
     }
 
@@ -115,13 +116,13 @@ class MultiplayerGame {
         const player = this.gameState.players.get(playerId);
         if (player) {
             console.log(`Player ${playerId} (${player.name}) removed from game`);
-            
+
             // Clean up player data
             this.gameState.players.delete(playerId);
             this.gameObjects.players.delete(playerId);
             this.gameObjects.lasers.delete(playerId);
             this.gameState.scores.delete(playerId);
-            
+
             // Handle host migration if needed
             if (this.isHost && playerId === this.manager.hostId) {
                 this.handleHostMigration();
@@ -137,7 +138,7 @@ class MultiplayerGame {
             { x: 100, y: 500 },   // Player 3
             { x: 700, y: 500 }    // Player 4
         ];
-        
+
         const playerIndex = Array.from(this.gameState.players.keys()).indexOf(playerId);
         return positions[playerIndex % positions.length];
     }
@@ -165,16 +166,16 @@ class MultiplayerGame {
             sharedScore: true,
             friendlyFire: false,
             reviveSystem: true,
-            
+
             checkWinCondition: () => {
                 // Win when all waves completed
                 return this.gameState.roundNumber > 10; // Example: 10 waves
             },
-            
+
             checkLoseCondition: () => {
                 // Lose when all lives depleted or all players dead
-                return this.getTotalLives() <= 0 || 
-                       Array.from(this.gameState.players.values()).every(p => !p.isActive);
+                return this.getTotalLives() <= 0 ||
+                    Array.from(this.gameState.players.values()).every(p => !p.isActive);
             }
         };
     }
@@ -187,18 +188,18 @@ class MultiplayerGame {
             friendlyFire: true,
             powerUpCompetition: true,
             timeLimit: 300000, // 5 minutes
-            
+
             checkWinCondition: () => {
                 // Win by highest score or last player standing
                 const activePlayers = Array.from(this.gameState.players.values())
                     .filter(p => p.isActive);
-                return activePlayers.length <= 1 || 
-                       this.gameState.gameTime >= this.gameMode.timeLimit;
+                return activePlayers.length <= 1 ||
+                    this.gameState.gameTime >= this.gameMode.timeLimit;
             },
-            
+
             getWinner: () => {
                 return Array.from(this.gameState.players.values())
-                    .reduce((winner, player) => 
+                    .reduce((winner, player) =>
                         player.score > winner.score ? player : winner
                     );
             }
@@ -208,26 +209,26 @@ class MultiplayerGame {
     // Main game loop for multiplayer
     update(deltaTime) {
         if (!this.gameState.isActive) return;
-        
+
         this.gameState.gameTime += deltaTime;
-        
+
         // Update all players
         this.updatePlayers(deltaTime);
-        
+
         // Update game objects
         this.updateGameObjects(deltaTime);
-        
+
         // Handle collisions
         this.handleCollisions();
-        
+
         // Check game conditions
         this.checkGameConditions();
-        
+
         // Sync state if host
         if (this.isHost && this.shouldSync()) {
             this.syncGameState();
         }
-        
+
         // Store state for rollback
         this.storeStateSnapshot();
     }
@@ -236,13 +237,13 @@ class MultiplayerGame {
     updatePlayers(deltaTime) {
         for (const [playerId, player] of this.gameState.players) {
             if (!player.isActive) continue;
-            
+
             // Apply player physics (adapted from original player.js)
             this.updatePlayerPhysics(player, deltaTime);
-            
+
             // Handle player input
             this.processPlayerInput(player, deltaTime);
-            
+
             // Update player-specific objects (lasers, etc.)
             this.updatePlayerObjects(playerId, deltaTime);
         }
@@ -253,22 +254,22 @@ class MultiplayerGame {
         // Apply rotation
         if (player.inputState.left) player.angle -= 5 * deltaTime / 16.67;
         if (player.inputState.right) player.angle += 5 * deltaTime / 16.67;
-        
+
         // Apply thrust
         if (player.inputState.up) {
             const thrust = 0.3 * deltaTime / 16.67;
             player.vx += Math.cos(player.angle) * thrust;
             player.vy += Math.sin(player.angle) * thrust;
         }
-        
+
         // Apply drag
         player.vx *= 0.98;
         player.vy *= 0.98;
-        
+
         // Update position
         player.x += player.vx * deltaTime / 16.67;
         player.y += player.vy * deltaTime / 16.67;
-        
+
         // Screen wrapping
         const canvas = this.canvas.getCanvas();
         if (player.x < 0) player.x = canvas.width;
@@ -289,12 +290,12 @@ class MultiplayerGame {
     fireLaser(playerId) {
         const player = this.gameState.players.get(playerId);
         if (!player || !player.isActive) return;
-        
+
         const playerLasers = this.gameObjects.lasers.get(playerId) || [];
-        
+
         // Limit laser count
         if (playerLasers.length >= 4) return;
-        
+
         const laser = {
             id: `${playerId}_${Date.now()}`,
             playerId: playerId,
@@ -306,7 +307,7 @@ class MultiplayerGame {
             lifetime: 1000, // 1 second
             damage: 25
         };
-        
+
         playerLasers.push(laser);
         this.gameObjects.lasers.set(playerId, playerLasers);
     }
@@ -315,16 +316,16 @@ class MultiplayerGame {
     updateGameObjects(deltaTime) {
         // Update asteroids (shared objects)
         this.updateAsteroids(deltaTime);
-        
+
         // Update enemies (shared objects)
         this.updateEnemies(deltaTime);
-        
+
         // Update all player lasers
         this.updateAllLasers(deltaTime);
-        
+
         // Update explosions
         this.updateExplosions(deltaTime);
-        
+
         // Update power-ups
         this.updatePowerUps(deltaTime);
     }
@@ -335,7 +336,7 @@ class MultiplayerGame {
             asteroid.x += asteroid.vx * deltaTime / 16.67;
             asteroid.y += asteroid.vy * deltaTime / 16.67;
             asteroid.angle += asteroid.rotationSpeed * deltaTime / 16.67;
-            
+
             // Screen wrapping
             const canvas = this.canvas.getCanvas();
             if (asteroid.x < -asteroid.size) asteroid.x = canvas.width + asteroid.size;
@@ -350,21 +351,21 @@ class MultiplayerGame {
         for (const [playerId, lasers] of this.gameObjects.lasers) {
             for (let i = lasers.length - 1; i >= 0; i--) {
                 const laser = lasers[i];
-                
+
                 // Update position
                 laser.x += laser.vx * deltaTime / 16.67;
                 laser.y += laser.vy * deltaTime / 16.67;
                 laser.lifetime -= deltaTime;
-                
+
                 // Remove expired lasers
                 if (laser.lifetime <= 0) {
                     lasers.splice(i, 1);
                     continue;
                 }
-                
+
                 // Screen boundary check
                 const canvas = this.canvas.getCanvas();
-                if (laser.x < 0 || laser.x > canvas.width || 
+                if (laser.x < 0 || laser.x > canvas.width ||
                     laser.y < 0 || laser.y > canvas.height) {
                     lasers.splice(i, 1);
                 }
@@ -376,16 +377,16 @@ class MultiplayerGame {
     handleCollisions() {
         // Player-asteroid collisions
         this.checkPlayerAsteroidCollisions();
-        
+
         // Laser-asteroid collisions
         this.checkLaserAsteroidCollisions();
-        
+
         // Player-enemy collisions
         this.checkPlayerEnemyCollisions();
-        
+
         // Player-powerup collisions
         this.checkPlayerPowerUpCollisions();
-        
+
         // Player-player collisions (for versus mode)
         if (this.gameState.mode === 'versus') {
             this.checkPlayerPlayerCollisions();
@@ -396,7 +397,7 @@ class MultiplayerGame {
     checkPlayerAsteroidCollisions() {
         for (const [playerId, player] of this.gameState.players) {
             if (!player.isActive) continue;
-            
+
             this.gameObjects.asteroids.forEach((asteroid, asteroidIndex) => {
                 if (this.collisions.checkCollision(player, asteroid)) {
                     this.handlePlayerHit(playerId, 'asteroid', 25);
@@ -410,9 +411,9 @@ class MultiplayerGame {
     handlePlayerHit(playerId, source, damage) {
         const player = this.gameState.players.get(playerId);
         if (!player || !player.isActive) return;
-        
+
         player.health -= damage;
-        
+
         if (player.health <= 0) {
             this.handlePlayerDeath(playerId);
         }
@@ -422,10 +423,10 @@ class MultiplayerGame {
     handlePlayerDeath(playerId) {
         const player = this.gameState.players.get(playerId);
         if (!player) return;
-        
+
         player.lives--;
         player.health = 100;
-        
+
         if (player.lives <= 0) {
             player.isActive = false;
             console.log(`Player ${player.name} eliminated`);
@@ -451,7 +452,7 @@ class MultiplayerGame {
 
     syncGameState() {
         if (!this.isHost) return;
-        
+
         const syncData = {
             type: 'gameStateSync',
             timestamp: Date.now(),
@@ -460,7 +461,7 @@ class MultiplayerGame {
             gameObjects: this.serializeGameObjects(),
             scores: Object.fromEntries(this.gameState.scores)
         };
-        
+
         // Send to all connected players
         this.manager.networkManager?.broadcast(syncData);
         this.lastSyncTime = Date.now();
@@ -498,23 +499,50 @@ class MultiplayerGame {
     // Apply received game state
     applyGameState(syncData) {
         if (this.isHost) return; // Host doesn't apply external state
-        
+
+        console.log('[MultiplayerGame] Applying game state with timestamp:', syncData.timestamp);
+
+        // Additional timestamp check for safety
+        if (this.lastAppliedTimestamp && syncData.timestamp <= this.lastAppliedTimestamp) {
+            console.log('[MultiplayerGame] Ignoring older state (last applied:', this.lastAppliedTimestamp, 'vs received:', syncData.timestamp, ')');
+            return;
+        }
+
         // Update players
         for (const [id, playerData] of Object.entries(syncData.players)) {
             const player = this.gameState.players.get(id);
             if (player) {
+                // Apply position and state updates with interpolation for smoother gameplay
                 Object.assign(player, playerData);
+            } else if (id !== this.localPlayerId) {
+                // Add new remote player
+                console.log('[MultiplayerGame] Adding new remote player:', id);
+                this.gameState.players.set(id, playerData);
             }
         }
-        
-        // Update game objects
-        this.gameObjects.asteroids = syncData.gameObjects.asteroids || [];
-        this.gameObjects.enemies = syncData.gameObjects.enemies || [];
-        this.gameObjects.explosions = syncData.gameObjects.explosions || [];
-        this.gameObjects.powerUps = syncData.gameObjects.powerUps || [];
-        
+
+        // Update game objects (only if timestamp is more recent)
+        if (syncData.gameObjects) {
+            this.gameObjects.asteroids = syncData.gameObjects.asteroids || [];
+            this.gameObjects.enemies = syncData.gameObjects.enemies || [];
+            this.gameObjects.explosions = syncData.gameObjects.explosions || [];
+            this.gameObjects.powerUps = syncData.gameObjects.powerUps || [];
+        }
+
         // Update scores
-        this.gameState.scores = new Map(Object.entries(syncData.scores));
+        if (syncData.scores) {
+            this.gameState.scores = new Map(Object.entries(syncData.scores));
+        }
+
+        // Update game time
+        if (syncData.gameTime !== undefined) {
+            this.gameState.gameTime = syncData.gameTime;
+        }
+
+        // Track the last applied timestamp
+        this.lastAppliedTimestamp = syncData.timestamp;
+
+        console.log('[MultiplayerGame] Successfully applied game state update');
     }
 
     // Game state management
@@ -522,10 +550,10 @@ class MultiplayerGame {
         this.gameState.isActive = true;
         this.gameState.gameTime = 0;
         this.gameState.roundNumber = 1;
-        
+
         // Initialize game objects
         this.spawnInitialAsteroids();
-        
+
         console.log(`Multiplayer ${this.gameState.mode} game started`);
     }
 
@@ -539,7 +567,7 @@ class MultiplayerGame {
 
     endGame(reason = 'completed') {
         this.gameState.isActive = false;
-        
+
         const results = {
             reason: reason,
             duration: this.gameState.gameTime,
@@ -551,7 +579,7 @@ class MultiplayerGame {
                 isActive: p.isActive
             }))
         };
-        
+
         console.log('Game ended:', results);
         return results;
     }
@@ -571,7 +599,7 @@ class MultiplayerGame {
         // Spawn initial asteroids based on player count
         const playerCount = this.gameState.players.size;
         const asteroidCount = Math.max(3, playerCount * 2);
-        
+
         for (let i = 0; i < asteroidCount; i++) {
             this.spawnAsteroid();
         }
@@ -589,7 +617,7 @@ class MultiplayerGame {
             size: 30 + Math.random() * 20,
             health: 50
         };
-        
+
         this.gameObjects.asteroids.push(asteroid);
     }
 
@@ -607,7 +635,7 @@ class MultiplayerGame {
         if (activePlayers.length > 0) {
             const newHost = activePlayers[0];
             console.log(`Host migrated to ${newHost.name}`);
-            
+
             // Notify all players of host change
             this.manager.networkManager?.broadcast({
                 type: 'hostMigration',
@@ -622,7 +650,7 @@ class MultiplayerGame {
         if (this.stateHistory.length > this.config.rollbackFrames) {
             this.stateHistory.shift();
         }
-        
+
         this.stateHistory.push({
             timestamp: Date.now(),
             players: this.serializePlayers(),
@@ -645,7 +673,7 @@ class MultiplayerGame {
         for (let i = this.gameObjects.explosions.length - 1; i >= 0; i--) {
             const explosion = this.gameObjects.explosions[i];
             explosion.frame += deltaTime / 50; // Animation speed
-            
+
             if (explosion.frame >= explosion.maxFrames) {
                 this.gameObjects.explosions.splice(i, 1);
             }
@@ -673,17 +701,17 @@ class MultiplayerGame {
         for (const [playerId, lasers] of this.gameObjects.lasers) {
             for (let i = lasers.length - 1; i >= 0; i--) {
                 const laser = lasers[i];
-                
+
                 for (let j = this.gameObjects.asteroids.length - 1; j >= 0; j--) {
                     const asteroid = this.gameObjects.asteroids[j];
-                    
+
                     if (this.collisions.checkCollision(laser, asteroid)) {
                         // Remove laser
                         lasers.splice(i, 1);
-                        
+
                         // Damage asteroid
                         asteroid.health -= laser.damage;
-                        
+
                         if (asteroid.health <= 0) {
                             // Destroy asteroid, add score
                             this.gameObjects.asteroids.splice(j, 1);
@@ -692,10 +720,10 @@ class MultiplayerGame {
                                 player.score += 100;
                                 this.gameState.scores.set(playerId, player.score);
                             }
-                            
+
                             this.createExplosion(asteroid.x, asteroid.y, 'asteroid');
                         }
-                        
+
                         break;
                     }
                 }
@@ -707,7 +735,7 @@ class MultiplayerGame {
         // Implement player-enemy collision detection
         for (const [playerId, player] of this.gameState.players) {
             if (!player.isActive) continue;
-            
+
             this.gameObjects.enemies.forEach(enemy => {
                 if (this.collisions.checkCollision(player, enemy)) {
                     this.handlePlayerHit(playerId, 'enemy', 30);
@@ -721,10 +749,10 @@ class MultiplayerGame {
         // Implement player-powerup collision detection
         for (const [playerId, player] of this.gameState.players) {
             if (!player.isActive) continue;
-            
+
             for (let i = this.gameObjects.powerUps.length - 1; i >= 0; i--) {
                 const powerUp = this.gameObjects.powerUps[i];
-                
+
                 if (this.collisions.checkCollision(player, powerUp)) {
                     this.gameObjects.powerUps.splice(i, 1);
                     this.applyPowerUp(playerId, powerUp.type);
@@ -736,7 +764,7 @@ class MultiplayerGame {
     checkPlayerPlayerCollisions() {
         // Implement player-player collision detection for versus mode
         const players = Array.from(this.gameState.players.values()).filter(p => p.isActive);
-        
+
         for (let i = 0; i < players.length; i++) {
             for (let j = i + 1; j < players.length; j++) {
                 if (this.collisions.checkCollision(players[i], players[j])) {
@@ -751,7 +779,7 @@ class MultiplayerGame {
     applyPowerUp(playerId, powerUpType) {
         const player = this.gameState.players.get(playerId);
         if (!player) return;
-        
+
         switch (powerUpType) {
             case 'health':
                 player.health = Math.min(100, player.health + 25);

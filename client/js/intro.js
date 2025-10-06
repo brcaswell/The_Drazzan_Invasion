@@ -1,12 +1,12 @@
 let gameStarted = false; // ✅ Ensures game starts only once
 let introActive = true; // ✅ Track if intro is playing
 let norinavio = { x: canvas.width / 2 - 300, y: -400, width: 600, height: 300 };
-let wyattShip = { 
-    x: norinavio.x + 120, 
-    y: norinavio.y + 100, 
-    width: 60, 
-    height: 60, 
-    launching: false, 
+let wyattShip = {
+    x: norinavio.x + 120,
+    y: norinavio.y + 100,
+    width: 60,
+    height: 60,
+    launching: false,
     visible: false // ✅ New property to hide the ship initially
 };
 
@@ -24,9 +24,9 @@ enemyImage.src = "assets/enemy.png"; // ✅ Ensure this exists
 const powerUpImage = new Image();
 powerUpImage.src = "assets/powerup.png"; // ✅ Ensure this exists
 
-let introText = [ 
-    "The Drazzan Armada has invaded our system...", 
-    "Wyatt... You are our last hope!" 
+let introText = [
+    "The Drazzan Armada has invaded our system...",
+    "Wyatt... You are our last hope!"
 ]; // ✅ Two epic lines of text
 
 let textIndex = 0; // ✅ Track which line of text is showing
@@ -44,13 +44,13 @@ function playIntro() {
     if (!introActive) return;
 
     // 🚀 **Move mothership (Norinavio) down onto the screen**
-    if (norinavio.y < (canvas.height * 2) / 3) { 
+    if (norinavio.y < (canvas.height * 2) / 3) {
         norinavio.y += 5; // ✅ Moves smoothly downward
     } else {
         // ✅ Ensure music starts once when Norinavio arrives
         if (backgroundMusic.paused) {
-            backgroundMusic.play().catch(error => {
-                console.error("❌ Music playback error:", error);
+            backgroundMusic.play().catch(() => {
+                // Music autoplay blocked - requires user interaction
             });
         }
 
@@ -95,27 +95,27 @@ function playIntro() {
         ctx.fillRect(canvas.width - 230, 20, 220, 220); // ✅ Increased height for larger icons
         ctx.strokeStyle = "white"; // ✅ White border
         ctx.strokeRect(canvas.width - 230, 20, 220, 220);
-    
+
         ctx.fillStyle = "white";
         ctx.font = "16px Arial"; // ✅ Slightly larger text for readability
         ctx.textAlign = "left";
-    
+
         const iconSize = 60; // ✅ Increased icon size
         const textOffset = canvas.width - 150; // ✅ Adjusted text position
-    
+
         // 🚀 **Draw Asteroid Section**
         if (asteroidImage.complete) ctx.drawImage(asteroidImage, canvas.width - 220, 30, iconSize, iconSize);
         ctx.fillText("Evade or Destroy", textOffset, 65);
-    
+
         // 🚀 **Draw Drazzan Raider Section**
         if (enemyImage.complete) ctx.drawImage(enemyImage, canvas.width - 220, 100, iconSize, iconSize);
         ctx.fillText("Destroy All Drazzan", textOffset, 135);
-    
+
         // 🚀 **Draw Power-Up Section**
         if (powerUpImage.complete) ctx.drawImage(powerUpImage, canvas.width - 220, 170, iconSize, iconSize);
         ctx.fillText("Collect Powerups", textOffset, 205);
     }
-    
+
 
     // 🚀 **Epic Cinematic Text Effect**
     if (textIndex < introText.length) {

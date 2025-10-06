@@ -8,16 +8,12 @@ class FeatureFlags {
                 description: 'Classic single player experience'
             },
             COOPERATIVE_MODE: {
-                enabled: false,
-                description: 'Team up with friends against AI enemies',
-                comingSoon: true,
-                estimatedDate: 'Q1 2025'
+                enabled: true,
+                description: 'Team up with friends against AI enemies'
             },
             VERSUS_MODE: {
-                enabled: false,
-                description: 'Compete against other players',
-                comingSoon: true,
-                estimatedDate: 'Q2 2025'
+                enabled: true,
+                description: 'Compete against other players'
             },
 
             // Features within game modes

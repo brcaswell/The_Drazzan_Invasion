@@ -5,6 +5,7 @@ class GameModeUI {
         this.currentView = null;
         this.elements = {};
         this.countdownTimer = null;
+        this.isReady = false;
     }
 
     initialize() {
@@ -327,7 +328,7 @@ class GameModeUI {
                         ${!versusEnabled ? `<div class="coming-soon">${versusStatus.message}</div>` : ''}
                     </button>
                     
-                    <button class="mode-button ${!(coopEnabled || versusEnabled) ? 'disabled' : ''}" ${!(coopEnabled || versusEnabled) ? 'onclick="return false;"' : 'onclick="this.showJoinDialog()"'}>
+                    <button class="mode-button ${!(coopEnabled || versusEnabled) ? 'disabled' : ''}" ${!(coopEnabled || versusEnabled) ? 'onclick="return false;"' : 'onclick="window.gameModeManager.ui.showJoinDialog()"'}>
                         <h3>🔗 Join Game</h3>
                         <p>Enter a game code</p>
                         ${!(coopEnabled || versusEnabled) ? '<div class="coming-soon">Available with multiplayer modes</div>' : ''}
@@ -353,14 +354,17 @@ class GameModeUI {
             <div class="lobby-container">
                 <div class="lobby-header">
                     <h1 class="lobby-title">${this.getModeDisplayName()} Lobby</h1>
-                    ${gameInfo.isHost ? `
-                        <div class="game-code">
-                            Game Code: <strong>${gameCode}</strong>
+                    <div class="game-code">
+                        <div style="font-size: 1.5em; margin: 10px 0;">Game Code: <strong style="color: #00ff88;">${gameCode}</strong></div>
+                        ${gameInfo.isHost ? `
                             <button class="share-button" onclick="navigator.clipboard.writeText('${shareUrl}'); this.textContent='Copied!'">
-                                📋 Copy Link
+                                📋 Copy Join Link
                             </button>
-                        </div>
-                    ` : ''}
+                            <div style="font-size: 0.9em; color: #ccc; margin-top: 5px;">Share this code with friends to join!</div>
+                        ` : `
+                            <div style="font-size: 0.9em; color: #ccc;">Connected to host's game</div>
+                        `}
+                    </div>
                 </div>
                 
                 <div class="lobby-info">
@@ -390,7 +394,7 @@ class GameModeUI {
                                 <span>Auto Start:</span>
                                 <label>
                                     <input type="checkbox" ${this.manager.lobbyOptions.autoStart ? 'checked' : ''} 
-                                           onchange="this.toggleAutoStart(this.checked)"> Enabled
+                                           onchange="window.gameModeManager.ui.toggleAutoStart(this.checked)"> Enabled
                                 </label>
                             </div>
                         ` : ''}
@@ -399,7 +403,7 @@ class GameModeUI {
                 
                 <div class="lobby-actions">
                     ${!gameInfo.isHost ? `
-                        <button class="lobby-button" onclick="this.toggleReady()">
+                        <button id="readyButton" class="lobby-button" onclick="window.gameModeManager.ui.toggleReady()">
                             Ready Up
                         </button>
                     ` : `
@@ -408,7 +412,7 @@ class GameModeUI {
                         </button>
                     `}
                     
-                    <button class="lobby-button danger" onclick="this.leaveLobby()">
+                    <button class="lobby-button danger" onclick="window.gameModeManager.ui.leaveLobby()">
                         Leave Lobby
                     </button>
                 </div>
@@ -417,9 +421,9 @@ class GameModeUI {
                     <div class="share-options">
                         <h4>Share Game</h4>
                         <div class="share-buttons">
-                            <button class="share-button" onclick="this.shareViaQR()">📱 QR Code</button>
-                            <button class="share-button" onclick="this.shareViaLink()">🔗 Share Link</button>
-                            <button class="share-button" onclick="this.shareViaClipboard('${gameCode}')">📋 Game Code</button>
+                            <button class="share-button" onclick="window.gameModeManager.ui.shareViaQR()">📱 QR Code</button>
+                            <button class="share-button" onclick="window.gameModeManager.ui.shareViaLink()">🔗 Share Link</button>
+                            <button class="share-button" onclick="window.gameModeManager.ui.shareViaClipboard('${gameCode}')">📋 Game Code</button>
                         </div>
                     </div>
                 ` : ''}
@@ -543,8 +547,31 @@ class GameModeUI {
     }
 
     toggleReady() {
-        // Implementation will depend on player state management
-        console.log('Toggle ready state');
+        console.log('[UI] Toggle ready state');
+
+        // Toggle ready state
+        this.isReady = !this.isReady;
+
+        // Update button text and style
+        const readyButton = document.getElementById('readyButton');
+        if (readyButton) {
+            if (this.isReady) {
+                readyButton.textContent = '✓ Ready';
+                readyButton.className = 'lobby-button ready';
+                readyButton.style.backgroundColor = '#00ff88';
+                readyButton.style.color = '#000';
+            } else {
+                readyButton.textContent = 'Ready Up';
+                readyButton.className = 'lobby-button';
+                readyButton.style.backgroundColor = '';
+                readyButton.style.color = '';
+            }
+        }
+
+        // Notify game mode manager of ready state change
+        if (this.manager.handlePlayerReady) {
+            this.manager.handlePlayerReady(this.isReady);
+        }
     }
 
     leaveLobby() {

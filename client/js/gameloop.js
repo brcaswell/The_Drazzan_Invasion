@@ -251,6 +251,16 @@ function update() {
     if (gamePaused) return; if (gameOver && !endCinematicActive) return;
 
     // =============================================================================
+    // MULTIPLAYER INTEGRATION
+    // =============================================================================
+    // Update multiplayer game state if active
+    if (window.multiplayerGame && window.multiplayerGame.gameState &&
+        window.multiplayerGame.gameState.isActive && !window.multiplayerGame.gameState.isPaused) {
+        const deltaTime = 16; // ~60fps frame time in milliseconds
+        window.multiplayerGame.update(deltaTime);
+    }
+
+    // =============================================================================
     // BOSS FIGHT MANAGEMENT
     // =============================================================================
     if (level === GameSettings.BOSS_FIGHT_LEVEL && enemiesDestroyed >= enemiesNeeded && !bossFightStarted) {
@@ -667,6 +677,64 @@ function draw() {
         ctx.fillText("Debug console is open", canvas.width / 2, canvas.height / 2 + 60);
     }
 }
+
+// =============================================================================
+// NETWORK INTEGRATION SUPPORT
+// =============================================================================
+// Create a gameInstance object for network manager integration
+window.gameInstance = {
+    // Network game state update handler
+    updateNetworkGameState(networkState) {
+        console.log('[GameInstance] Received network game state update:', networkState);
+
+        // Only apply network updates if we're in multiplayer mode
+        if (window.multiplayerGame && !window.multiplayerGame.isHost) {
+            // Update player positions, scores, and game objects based on network state
+            if (networkState.players) {
+                // Update other players' positions and states
+                for (const [playerId, playerData] of Object.entries(networkState.players)) {
+                    if (playerId !== window.multiplayerGame.localPlayerId) {
+                        // Apply remote player updates
+                        console.log(`[GameInstance] Updating remote player ${playerId}:`, playerData);
+                    }
+                }
+            }
+
+            // Update game time and scores
+            if (networkState.gameTime !== undefined) {
+                gameTime = networkState.gameTime;
+                window.gameTime = gameTime;
+            }
+
+            if (networkState.scores) {
+                // Update score display for multiplayer
+                console.log('[GameInstance] Updated scores:', networkState.scores);
+            }
+        }
+    },
+
+    // Handle player disconnection
+    handlePlayerDisconnect(playerId) {
+        console.log('[GameInstance] Player disconnected:', playerId);
+        // Handle cleanup of disconnected player's objects
+    },
+
+    // Handle network connectivity changes
+    handleNetworkChange(isOnline) {
+        console.log('[GameInstance] Network status changed:', isOnline ? 'online' : 'offline');
+        if (!isOnline && window.multiplayerGame) {
+            // Switch to single-player mode on disconnect
+            console.log('[GameInstance] Switching to offline mode');
+        }
+    },
+
+    // Game state synchronization for service worker
+    syncGameState() {
+        if (window.multiplayerGame && window.multiplayerGame.isHost) {
+            window.multiplayerGame.syncGameState();
+        }
+    }
+};
 
 function gameLoop() {
     update();

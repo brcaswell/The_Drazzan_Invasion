@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Cross-Origin P2P Bridge</title>
+</head>
+
+<body>
+    <div id="signal-bridge"
+         style="display: none;">
+        <!-- This page serves as a cross-origin communication bridge -->
+    </div>
+
+    <script>
+        // Cross-origin bridge for P2P signaling
+        // This page can receive postMessage from parent and store/forward signals
+
+        const signals = [];
+
+        // Listen for messages from parent window
+        window.addEventListener('message', (event) => {
+            console.log('[Bridge] Received message:', event.data);
+
+            if (event.data.type === 'p2p-signal') {
+                signals.push(event.data.signal);
+
+                // Store in localStorage for this origin
+                try {
+                    localStorage.setItem('drazzan-bridge-signals', JSON.stringify(signals));
+                    console.log('[Bridge] Signal stored');
+                } catch (error) {
+                    console.error('[Bridge] Storage failed:', error);
+                }
+            }
+
+            if (event.data.type === 'get-signals') {
+                // Send back all signals
+                event.source.postMessage({
+                    type: 'bridge-signals',
+                    signals: signals
+                }, event.origin);
+            }
+        });
+
+        // Periodically check for signals and clean old ones
+        setInterval(() => {
+            const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+            const recentSignals = signals.filter(s => s.timestamp > fiveMinutesAgo);
+
+            if (recentSignals.length !== signals.length) {
+                signals.length = 0;
+                signals.push(...recentSignals);
+
+                try {
+                    localStorage.setItem('drazzan-bridge-signals', JSON.stringify(signals));
+                } catch (error) {
+                    // Ignore cleanup errors
+                }
+            }
+        }, 30000); // Clean every 30 seconds
+
+        console.log('[Bridge] Cross-origin P2P bridge ready');
+    </script>
+</body>
+
+</html>
