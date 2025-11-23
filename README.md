@@ -2,7 +2,7 @@
 
 🚀 **A decentralized multiplayer space shooter game built with modern web technologies**
 
-[![Play Now](https://img.shields.io/badge/Play%20Now-GitHub%20Pages-blue?style=for-the-badge)](https://scifistories1977.github.io/The_Drazzan_Invasion/)
+[![Play Now](https://img.shields.io/badge/Play%20Now-GitHub%20Pages-blue?style=for-the-badge)](https://brcaswell.github.io/The_Drazzan_Invasion/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Ready-green?style=for-the-badge)](#progressive-web-app)
 [![Multiplayer](https://img.shields.io/badge/Multiplayer-P2P%20WebRTC-orange?style=for-the-badge)](#multiplayer-architecture)
 
@@ -31,7 +31,7 @@
 
 ## �🎮 **Quick Start**
 
-**Play Instantly**: [Launch Game](https://scifistories1977.github.io/The_Drazzan_Invasion/) | **Install as App**: Click "Install" in your browser
+**Play Instantly**: [Launch Game](https://brcaswell.github.io/The_Drazzan_Invasion/) | **Install as App**: Click "Install" in your browser
 
 **Local Development**: 
 ```bash
@@ -83,7 +83,7 @@ The_Drazzan_Invasion/
 ## 🚀 **Getting Started**
 
 ### **For Players**
-1. **Web**: Visit [game link](https://scifistories1977.github.io/The_Drazzan_Invasion/)
+1. **Web**: Visit [game link](https://brcaswell.github.io/The_Drazzan_Invasion/)
 2. **Install as App**: Click install button in browser address bar
 3. **Desktop**: Download from releases (when available)
 
@@ -342,6 +342,6 @@ This project is open source. See LICENSE file for details.
 
 ---
 
-**🎮 Ready to play?** [Launch The Drazzan Invasion](https://scifistories1977.github.io/The_Drazzan_Invasion/)
+**🎮 Ready to play?** [Launch The Drazzan Invasion](https://brcaswell.github.io/The_Drazzan_Invasion/)
 
 **🛠️ Ready to contribute?** Check out the [development documentation](docs/) and [Enhanced AI Instruction System](.github/instructions/copilot-entry-point.md)

@@ -41,7 +41,7 @@
 4. **Testing**: [Testing Guide](testing-guide.md)
 
 ### **🎮 For Players**
-- **Play Now**: [Launch Game](https://scifistories1977.github.io/The_Drazzan_Invasion/)
+- **Play Now**: [Launch Game](https://brcaswell.github.io/The_Drazzan_Invasion/)
 - **Install PWA**: Click install button in browser
 - **Debug Mode**: Press `~` in single-player for debug console
 
