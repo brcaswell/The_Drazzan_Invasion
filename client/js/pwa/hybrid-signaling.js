@@ -14,6 +14,9 @@ class HybridSignaling {
         this.activeMethod = null;
         this.pollingInterval = null;
 
+        // Track game advertisements
+        this.gameAdvertisements = new Map(); // gameCode -> { hostId, gameInfo, timestamp }
+
         console.log('[HybridSignaling] Initializing hybrid signaling for peer:', peerId);
         this.initializeSignalingMethods();
     }
@@ -75,7 +78,14 @@ class HybridSignaling {
             const targetPort = currentPort === '8080' ? '8081' : '8080';
             this.crossOriginIframe.src = `http://localhost:${targetPort}/cross-origin-bridge.html`;
 
-            document.body.appendChild(this.crossOriginIframe);
+            // Wait for document.body to be available
+            if (document.body) {
+                document.body.appendChild(this.crossOriginIframe);
+            } else {
+                document.addEventListener('DOMContentLoaded', () => {
+                    document.body.appendChild(this.crossOriginIframe);
+                });
+            }
 
             // Listen for messages from the iframe bridge
             window.addEventListener('message', (event) => {
@@ -166,6 +176,19 @@ class HybridSignaling {
         return Promise.resolve();
     }
 
+    // Manual polling method for immediate signal checking
+    async pollForMessages() {
+        if (this.signalingMethods.includes('localStorage')) {
+            this.pollLocalStorage();
+        }
+        if (this.signalingMethods.includes('broadcastChannel')) {
+            // BroadcastChannel is event-driven, no need to poll
+        }
+        if (this.signalingMethods.includes('httpCrossOrigin')) {
+            // HTTP cross-origin is handled by iframe postMessage, no need to poll
+        }
+    }
+
     disconnect() {
         this.isConnected = false;
         if (this.pollingInterval) {
@@ -208,7 +231,7 @@ class HybridSignaling {
         try {
             // Send signal to iframe bridge for cross-origin storage
             this.crossOriginIframe.contentWindow.postMessage({
-                type: 'p2p-signal',
+                type: 'store-signal',
                 signal: message
             }, '*');
 
@@ -371,6 +394,19 @@ class HybridSignaling {
             console.log(`[HybridSignaling] Processing signal from ${source}:`, data.signal?.type || data.type);
 
             if (data.type === 'game-advertisement') {
+                // Store game advertisement for lookup
+                if (data.gameInfo && data.gameInfo.gameCode && data.gameInfo.hostId) {
+                    this.gameAdvertisements.set(data.gameInfo.gameCode, {
+                        hostId: data.gameInfo.hostId,
+                        gameInfo: data.gameInfo,
+                        timestamp: data.timestamp || Date.now()
+                    });
+                    console.log(`[HybridSignaling] Stored game advertisement: ${data.gameInfo.gameCode} -> ${data.gameInfo.hostId}`);
+                    console.log(`[HybridSignaling] Current advertisements count: ${this.gameAdvertisements.size}`);
+                    console.log(`[HybridSignaling] All game codes:`, Array.from(this.gameAdvertisements.keys()));
+                } else {
+                    console.warn(`[HybridSignaling] Invalid game advertisement data:`, data);
+                }
                 this.emit('game-advertisement', data.gameInfo);
             } else if (data.signal) {
                 switch (data.signal.type) {
@@ -404,6 +440,42 @@ class HybridSignaling {
         await this.sendViaHTTP(message);
 
         return Promise.resolve();
+    }
+
+    // Find host peer ID for a given game code
+    async findGameHost(gameCode) {
+        console.log(`[HybridSignaling] Looking for game host with code: ${gameCode}`);
+        console.log(`[HybridSignaling] Current advertisements in memory:`, Array.from(this.gameAdvertisements.keys()));
+
+        // Check local cache first
+        const advertisement = this.gameAdvertisements.get(gameCode);
+        if (advertisement) {
+            // Check if advertisement is still fresh (within 5 minutes)
+            const age = Date.now() - advertisement.timestamp;
+            console.log(`[HybridSignaling] Found cached advertisement, age: ${Math.round(age / 1000)}s`);
+            if (age < 5 * 60 * 1000) {
+                console.log(`[HybridSignaling] Returning cached host: ${advertisement.hostId}`);
+                return advertisement.hostId;
+            } else {
+                console.log(`[HybridSignaling] Cached advertisement is stale, removing`);
+                // Remove stale advertisement
+                this.gameAdvertisements.delete(gameCode);
+            }
+        }
+
+        // Poll for recent game advertisements
+        console.log(`[HybridSignaling] Polling for fresh game advertisements...`);
+        await this.pollForMessages();
+
+        // Check again after polling
+        const freshAdvertisement = this.gameAdvertisements.get(gameCode);
+        if (freshAdvertisement) {
+            console.log(`[HybridSignaling] Found fresh advertisement after polling: ${freshAdvertisement.hostId}`);
+            return freshAdvertisement.hostId;
+        }
+
+        console.log(`[HybridSignaling] No advertisement found for game code: ${gameCode}`);
+        return null;
     }
 
     async sendOffer(offer, targetPeer) {

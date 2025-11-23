@@ -18,7 +18,17 @@
                 "focus": true,
                 "panel": "shared"
             },
-            "problemMatcher": [],
+            "problemMatcher": {
+                "owner": "p2p-startup",
+                "pattern": {
+                    "regexp": ".*"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "Starting P2P WebAssembly Development Environment",
+                    "endsPattern": "P2P Development Environment Ready!"
+                }
+            },
             "isBackground": true,
             "runOptions": {
                 "runOn": "folderOpen"

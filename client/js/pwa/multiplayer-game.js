@@ -13,6 +13,7 @@ class MultiplayerGame {
         };
 
         this.gameObjects = {
+            players: new Map(),
             asteroids: [],
             enemies: [],
             lasers: [],
@@ -551,10 +552,18 @@ class MultiplayerGame {
         this.gameState.gameTime = 0;
         this.gameState.roundNumber = 1;
 
+        // Add host player if not already added
+        if (this.isHost && this.gameState.players.size === 0) {
+            this.addPlayer('host', {
+                name: 'Player 1 (Host)',
+                isHost: true
+            });
+        }
+
         // Initialize game objects
         this.spawnInitialAsteroids();
 
-        console.log(`Multiplayer ${this.gameState.mode} game started`);
+        console.log(`Multiplayer ${this.gameState.mode} game started with ${this.gameState.players.size} players`);
     }
 
     pauseGame() {

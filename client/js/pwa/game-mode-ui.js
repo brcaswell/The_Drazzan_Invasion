@@ -49,6 +49,119 @@ class GameModeUI {
                     padding: 40px;
                 }
 
+                .join-game-form {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1100;
+                }
+
+                .join-form-content {
+                    background: linear-gradient(135deg, #1a1a3e 0%, #2d2d5e 100%);
+                    padding: 30px;
+                    border-radius: 10px;
+                    border: 2px solid #00ff88;
+                    max-width: 400px;
+                    width: 90%;
+                    text-align: center;
+                }
+
+                .join-form-content h3 {
+                    margin-top: 0;
+                    color: #00ff88;
+                    font-size: 1.5em;
+                }
+
+                .form-group {
+                    margin: 20px 0;
+                    text-align: left;
+                }
+
+                .form-group label {
+                    display: block;
+                    margin-bottom: 8px;
+                    color: #ffffff;
+                    font-weight: bold;
+                }
+
+                .form-group input {
+                    width: 100%;
+                    padding: 12px;
+                    border: 2px solid #555;
+                    border-radius: 5px;
+                    background: #2a2a4a;
+                    color: #ffffff;
+                    font-size: 1.2em;
+                    text-align: center;
+                    letter-spacing: 2px;
+                    font-family: 'Courier New', monospace;
+                }
+
+                .form-group input:focus {
+                    outline: none;
+                    border-color: #00ff88;
+                    background: #333355;
+                }
+
+                .connection-status {
+                    margin: 15px 0;
+                    padding: 10px;
+                    border-radius: 5px;
+                    background: #333;
+                }
+
+                .status-ready { background: #444; color: #ccc; }
+                .status-connecting { background: #2a4a7a; color: #88ccff; }
+                .status-success { background: #2a5a2a; color: #88ff88; }
+                .status-error { background: #5a2a2a; color: #ff8888; }
+
+                .form-buttons {
+                    display: flex;
+                    gap: 15px;
+                    margin-top: 25px;
+                }
+
+                .primary-button, .secondary-button {
+                    flex: 1;
+                    padding: 12px 20px;
+                    border: none;
+                    border-radius: 5px;
+                    font-size: 1em;
+                    font-family: 'Courier New', monospace;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                }
+
+                .primary-button {
+                    background: #00ff88;
+                    color: #000;
+                }
+
+                .primary-button:hover:not(:disabled) {
+                    background: #00cc6a;
+                }
+
+                .primary-button:disabled {
+                    background: #666;
+                    color: #999;
+                    cursor: not-allowed;
+                }
+
+                .secondary-button {
+                    background: #666;
+                    color: #fff;
+                }
+
+                .secondary-button:hover {
+                    background: #888;
+                }
+
                 .mode-title {
                     font-size: 3em;
                     margin-bottom: 20px;
@@ -421,7 +534,6 @@ class GameModeUI {
                     <div class="share-options">
                         <h4>Share Game</h4>
                         <div class="share-buttons">
-                            <button class="share-button" onclick="window.gameModeManager.ui.shareViaQR()">📱 QR Code</button>
                             <button class="share-button" onclick="window.gameModeManager.ui.shareViaLink()">🔗 Share Link</button>
                             <button class="share-button" onclick="window.gameModeManager.ui.shareViaClipboard('${gameCode}')">📋 Game Code</button>
                         </div>
@@ -540,10 +652,130 @@ class GameModeUI {
 
     // UI interaction handlers
     showJoinDialog() {
-        const gameCode = prompt('Enter game code:');
-        if (gameCode) {
-            this.manager.networkManager?.joinGame(gameCode.toUpperCase());
+        // Remove any existing join form
+        const existingForm = document.getElementById('joinGameForm');
+        if (existingForm) {
+            existingForm.remove();
         }
+
+        // Create join game form
+        const joinForm = document.createElement('div');
+        joinForm.id = 'joinGameForm';
+        joinForm.className = 'join-game-form';
+        joinForm.innerHTML = `
+            <div class="join-form-content">
+                <h3>Join Multiplayer Game</h3>
+                <div class="form-group">
+                    <label for="gameCodeInput">Game Code:</label>
+                    <input type="text" id="gameCodeInput" placeholder="Enter 6-character code" maxlength="6" />
+                </div>
+                <div class="connection-status" id="connectionStatus">
+                    <span class="status-text">Ready to connect</span>
+                </div>
+                <div class="form-buttons">
+                    <button id="joinGameBtn" class="primary-button">Join Game</button>
+                    <button id="cancelJoinBtn" class="secondary-button">Cancel</button>
+                </div>
+            </div>
+        `;
+
+        // Add to container
+        this.elements.container.appendChild(joinForm);
+
+        // Setup event handlers
+        const gameCodeInput = document.getElementById('gameCodeInput');
+        const joinBtn = document.getElementById('joinGameBtn');
+        const cancelBtn = document.getElementById('cancelJoinBtn');
+        const statusElement = document.getElementById('connectionStatus');
+
+        // Auto-focus input
+        gameCodeInput.focus();
+
+        // Handle input formatting (uppercase, 6 chars max)
+        gameCodeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+            joinBtn.disabled = e.target.value.length !== 6;
+        });
+
+        // Handle Enter key
+        gameCodeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && gameCodeInput.value.length === 6) {
+                this.attemptJoinGame(gameCodeInput.value, statusElement, joinForm);
+            }
+        });
+
+        // Handle join button
+        joinBtn.addEventListener('click', () => {
+            this.attemptJoinGame(gameCodeInput.value, statusElement, joinForm);
+        });
+
+        // Handle cancel button
+        cancelBtn.addEventListener('click', () => {
+            joinForm.remove();
+        });
+
+        // Initially disable join button
+        joinBtn.disabled = true;
+    }
+
+    attemptJoinGame(gameCode, statusElement, joinForm) {
+        if (!gameCode || gameCode.length !== 6) {
+            this.updateConnectionStatus(statusElement, 'error', 'Please enter a valid 6-character code');
+            return;
+        }
+
+        // Update status to connecting
+        this.updateConnectionStatus(statusElement, 'connecting', 'Connecting to game...');
+
+        // Disable form during connection attempt
+        const inputs = joinForm.querySelectorAll('input, button');
+        inputs.forEach(input => input.disabled = true);
+
+        // Attempt to join game
+        if (this.manager.networkManager) {
+            // Set up result handlers
+            const originalHandler = this.manager.networkManager.onConnectionResult;
+            this.manager.networkManager.onConnectionResult = (success, message) => {
+                if (success) {
+                    this.updateConnectionStatus(statusElement, 'success', 'Connected successfully!');
+                    setTimeout(() => joinForm.remove(), 1500);
+                } else {
+                    this.updateConnectionStatus(statusElement, 'error', message || 'Connection failed');
+                    // Re-enable form
+                    inputs.forEach(input => input.disabled = false);
+                }
+
+                // Restore original handler
+                if (originalHandler) {
+                    this.manager.networkManager.onConnectionResult = originalHandler;
+                }
+            };
+
+            // Start join attempt
+            this.manager.networkManager.joinGame(gameCode);
+
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                if (statusElement.textContent === 'Connecting to game...') {
+                    this.updateConnectionStatus(statusElement, 'error', 'Connection timeout');
+                    inputs.forEach(input => input.disabled = false);
+                }
+            }, 10000);
+        } else {
+            this.updateConnectionStatus(statusElement, 'error', 'Network manager not available');
+            inputs.forEach(input => input.disabled = false);
+        }
+    }
+
+    updateConnectionStatus(statusElement, type, message) {
+        const statusText = statusElement.querySelector('.status-text');
+        statusText.textContent = message;
+
+        // Remove existing status classes
+        statusElement.classList.remove('status-ready', 'status-connecting', 'status-success', 'status-error');
+
+        // Add new status class
+        statusElement.classList.add(`status-${type}`);
     }
 
     toggleReady() {
@@ -581,11 +813,6 @@ class GameModeUI {
 
     toggleAutoStart(enabled) {
         this.manager.lobbyOptions.autoStart = enabled;
-    }
-
-    shareViaQR() {
-        // Implementation for QR code sharing
-        console.log('Show QR code');
     }
 
     shareViaLink() {

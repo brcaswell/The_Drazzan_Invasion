@@ -80,6 +80,10 @@ data/
 *.swo
 *~
 
+# Chrome user data directories (for P2P testing)
+.chrome-peer/
+.chrome-host/
+
 # OS generated files
 .DS_Store
 .DS_Store?

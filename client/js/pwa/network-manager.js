@@ -9,7 +9,11 @@ class NetworkManager {
         this.signalingServer = null;
         this.localGameServer = null;
 
-        // WebRTC configuration
+        // Game code to peer ID mapping
+        this.gameCodeMap = new Map(); // gameCode -> hostPeerId
+
+        // Connection result callback for UI feedback
+        this.onConnectionResult = null;        // WebRTC configuration
         this.rtcConfig = {
             iceServers: [
                 { urls: 'stun:localhost:3478' }, // Local STUN/TURN server
@@ -210,42 +214,99 @@ class NetworkManager {
         return this.gameCode; // Return user-friendly game code
     }
 
-    // Join existing game
-    async joinGame(hostPeerId) {
-        console.log('[P2P] Joining game hosted by:', hostPeerId);
-
-        if (hostPeerId === this.peerId) {
-            throw new Error('Cannot join own game');
+    // Resolve game code to peer ID by querying signaling server
+    async resolveGameCodeToPeerId(gameCode) {
+        if (this.signalingServer && this.signalingServer.findGameHost) {
+            try {
+                const hostPeerId = await this.signalingServer.findGameHost(gameCode);
+                if (hostPeerId) {
+                    this.gameCodeMap.set(gameCode, hostPeerId);
+                    return hostPeerId;
+                }
+            } catch (error) {
+                console.warn('[P2P] Failed to resolve game code via signaling server:', error);
+            }
         }
 
-        // Create peer connection to host
-        await this.connectToPeer(hostPeerId);
+        // Check local cache
+        if (this.gameCodeMap.has(gameCode)) {
+            return this.gameCodeMap.get(gameCode);
+        }
 
-        // Wait for connection to be established
-        return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('Connection timeout'));
-            }, 10000);
+        return null;
+    }
 
-            const checkConnection = () => {
-                const connection = this.connections.get(hostPeerId);
-                if (connection && connection.connectionState === 'connected') {
-                    clearTimeout(timeout);
+    // Join existing game
+    async joinGame(gameCodeOrPeerId) {
+        console.log('[P2P] Joining game with code/ID:', gameCodeOrPeerId);
 
-                    // Send join request
-                    this.sendToPlayer(hostPeerId, {
-                        type: 'join_request',
-                        playerId: this.peerId
-                    });
+        try {
+            // Try to resolve game code to peer ID
+            let hostPeerId = gameCodeOrPeerId;
 
-                    resolve(hostPeerId);
-                } else {
-                    setTimeout(checkConnection, 100);
+            // If it looks like a game code (6 chars), try to resolve it
+            if (gameCodeOrPeerId.length === 6 && /^[A-Z0-9]+$/.test(gameCodeOrPeerId)) {
+                console.log('[P2P] Resolving game code to peer ID...');
+                hostPeerId = await this.resolveGameCodeToPeerId(gameCodeOrPeerId);
+                if (!hostPeerId) {
+                    throw new Error('Game not found. Host may have disconnected.');
                 }
-            };
+                console.log('[P2P] Resolved game code', gameCodeOrPeerId, 'to peer ID:', hostPeerId);
+            }
 
-            checkConnection();
-        });
+            if (hostPeerId === this.peerId) {
+                throw new Error('Cannot join own game');
+            }
+
+            // Create peer connection to host
+            await this.connectToPeer(hostPeerId);
+
+            // Wait for connection to be established
+            const result = await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    reject(new Error('Connection timeout'));
+                }, 10000);
+
+                const checkConnection = () => {
+                    const connection = this.connections.get(hostPeerId);
+                    if (connection && connection.connectionState === 'connected') {
+                        clearTimeout(timeout);
+
+                        // Send join request
+                        this.sendToPlayer(hostPeerId, {
+                            type: 'join_request',
+                            playerId: this.peerId
+                        });
+
+                        resolve(hostPeerId);
+                    } else if (connection && connection.connectionState === 'failed') {
+                        clearTimeout(timeout);
+                        reject(new Error('Connection failed'));
+                    } else {
+                        setTimeout(checkConnection, 100);
+                    }
+                };
+
+                checkConnection();
+            });
+
+            // Notify UI of successful connection
+            if (this.onConnectionResult) {
+                this.onConnectionResult(true, 'Connected successfully');
+            }
+
+            return result;
+
+        } catch (error) {
+            console.error('[P2P] Join game failed:', error);
+
+            // Notify UI of connection failure
+            if (this.onConnectionResult) {
+                this.onConnectionResult(false, error.message);
+            }
+
+            throw error;
+        }
     }
 
     // Connect to a specific peer

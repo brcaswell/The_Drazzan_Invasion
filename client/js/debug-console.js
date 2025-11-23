@@ -92,6 +92,11 @@ class DebugConsole {
             execute: () => this.showFeatures()
         });
 
+        this.commands.set('devEnv', {
+            description: 'Check development environment status',
+            execute: () => this.checkDevEnvironment()
+        });
+
         this.commands.set('clear', {
             description: 'Clear console output',
             execute: () => this.clearOutput()
@@ -285,6 +290,65 @@ class DebugConsole {
         });
     }
 
+    show() {
+        // Check if we're in single player mode
+        if (!this.isSinglePlayerMode()) {
+            console.log('[Debug] Debug console only available in single player mode');
+            return;
+        }
+
+        if (!this.isVisible) {
+            this.isVisible = true;
+            this.element.style.display = 'flex';
+            this.setupConsoleDisplay();
+        }
+    }
+
+    hide() {
+        if (this.isVisible) {
+            this.isVisible = false;
+            this.element.style.display = 'none';
+
+            // Resume game when console closes
+            if (typeof window.resumeGame === 'function') {
+                window.resumeGame();
+            }
+        }
+    }
+
+    setupConsoleDisplay() {
+        // Pause game when console opens
+        if (typeof window.pauseGame === 'function') {
+            window.pauseGame();
+        }
+
+        // Clear output and restore state
+        this.clearOutput();
+
+        // Show initial help if first time, or restore last 2 commands
+        if (!this.hasShownInitialHelp) {
+            this.log('Debug Console - Single Player Mode Only');
+            this.log('Type "help" for available commands.');
+            this.log('Game paused while console is open.');
+            this.hasShownInitialHelp = true;
+        } else {
+            this.log('Debug Console - Single Player Mode Only');
+            this.log('Game paused while console is open.');
+
+            // Show last 2 commands from history
+            const recentCommands = this.lastCommands.slice(-2);
+            recentCommands.forEach(cmd => {
+                this.log('> ' + cmd.command, '#ffaa00');
+                this.log(cmd.result, '#cccccc');
+            });
+        }
+
+        // Ensure input is properly focused with delay to handle timing issues
+        setTimeout(() => {
+            this.ensureInputFunctional();
+        }, 50);
+    }
+
     toggle() {
         // Check if we're in single player mode
         if (!this.isSinglePlayerMode()) {
@@ -296,38 +360,166 @@ class DebugConsole {
         this.element.style.display = this.isVisible ? 'flex' : 'none';
 
         if (this.isVisible) {
-            // Pause game when console opens
-            if (typeof window.pauseGame === 'function') {
-                window.pauseGame();
-            }
-
-            // Clear output and restore state
-            this.clearOutput();
-
-            // Show initial help if first time, or restore last 2 commands
-            if (!this.hasShownInitialHelp) {
-                this.log('Debug Console - Single Player Mode Only');
-                this.log('Type "help" for available commands.');
-                this.log('Game paused while console is open.');
-                this.hasShownInitialHelp = true;
-            } else {
-                this.log('Debug Console - Single Player Mode Only');
-                this.log('Game paused while console is open.');
-
-                // Show last 2 commands from history
-                const recentCommands = this.lastCommands.slice(-2);
-                recentCommands.forEach(cmd => {
-                    this.log('> ' + cmd.command, '#ffaa00');
-                    this.log(cmd.result, '#cccccc');
-                });
-            }
-
-            this.input.focus();
+            this.setupConsoleDisplay();
         } else {
             // Resume game when console closes
             if (typeof window.resumeGame === 'function') {
                 window.resumeGame();
             }
+        }
+    }
+
+    reset() {
+        // Reset console state but keep it visible if it was visible
+        const wasVisible = this.isVisible;
+
+        // Clear command history but preserve the console state
+        this.hasShownInitialHelp = false;
+
+        // Check if UI elements still exist and recreate if necessary
+        this.ensureUIExists();
+
+        // If console was visible, refresh its display
+        if (wasVisible) {
+            this.clearOutput();
+            this.log('Game reset - Debug console refreshed', '#00ff88');
+            this.setupConsoleDisplay();
+
+            // Ensure input is properly focused and functional after reset
+            setTimeout(() => {
+                this.ensureInputFunctional();
+            }, 100);
+        }
+    }
+
+    ensureUIExists() {
+        // Check if the main console element exists and has content
+        const existingConsole = document.getElementById('debugConsole');
+
+        if (!existingConsole || !this.element || !this.element.parentNode) {
+            console.log('[Debug] Console UI missing after reset, recreating...');
+            this.createUI();
+            this.setupEventListeners();
+            return;
+        }
+
+        // Check if the console is empty (no child elements)
+        if (!this.element.children || this.element.children.length === 0) {
+            console.log('[Debug] Console UI empty after reset, rebuilding content...');
+
+            // Remove the empty element and recreate
+            if (this.element.parentNode) {
+                this.element.parentNode.removeChild(this.element);
+            }
+
+            this.createUI();
+            this.setupEventListeners();
+            return;
+        }
+
+        // Verify critical elements still exist
+        if (!this.output || !this.input || !this.output.parentNode || !this.input.parentNode) {
+            console.log('[Debug] Console elements corrupted after reset, rebuilding...');
+
+            // Clear and rebuild
+            this.element.innerHTML = '';
+            this.createUIContent();
+        }
+    }
+
+    createUIContent() {
+        // Rebuild just the content inside the existing element
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = `
+            padding: 5px 10px;
+            background: rgba(0, 255, 136, 0.2);
+            border-bottom: 1px solid #00ff88;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        header.innerHTML = `
+            <span>Debug Console</span>
+            <span style="cursor: pointer; color: #ff6666;" onclick="window.debugConsole.toggle()">×</span>
+        `;
+
+        // Output area
+        this.output = document.createElement('div');
+        this.output.style.cssText = `
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.5);
+        `;
+
+        // Input area
+        const inputContainer = document.createElement('div');
+        inputContainer.style.cssText = `
+            padding: 5px;
+            border-top: 1px solid #00ff88;
+            background: rgba(0, 0, 0, 0.7);
+        `;
+
+        this.input = document.createElement('input');
+        this.input.type = 'text';
+        this.input.placeholder = 'Enter command (try "help")';
+        this.input.style.cssText = `
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #00ff88;
+            font-family: inherit;
+            font-size: inherit;
+            outline: none;
+        `;
+
+        inputContainer.appendChild(this.input);
+        this.element.appendChild(header);
+        this.element.appendChild(this.output);
+        this.element.appendChild(inputContainer);
+
+        // Recreate autocomplete
+        this.createAutocompleteUI();
+    }
+
+    ensureInputFunctional() {
+        if (this.isVisible && this.input) {
+            console.log('[Debug] Attempting to restore input functionality...');
+
+            // Force focus and make sure input is interactive
+            this.input.focus();
+            this.input.disabled = false;
+            this.input.readOnly = false;
+            this.input.style.pointerEvents = 'auto';
+
+            // Verify input is actually focused
+            const activeElement = document.activeElement;
+            console.log('[Debug] Active element after focus attempt:', activeElement === this.input ? 'Input focused' : 'Focus failed');
+
+            if (activeElement !== this.input) {
+                // Try again with a slight delay if focus didn't work
+                console.log('[Debug] Focus failed, retrying with click...');
+                setTimeout(() => {
+                    this.input.focus();
+                    this.input.click(); // Sometimes click helps restore focus
+
+                    // Final check
+                    if (document.activeElement === this.input) {
+                        console.log('[Debug] Input focus restored successfully');
+                        this.log('Input restored - console ready', '#00ff88');
+                    } else {
+                        console.warn('[Debug] Failed to restore input focus');
+                        this.log('⚠️ Input focus issue - try clicking in the input field', '#ffaa00');
+                    }
+                }, 50);
+            } else {
+                console.log('[Debug] Input focus restored successfully');
+                this.log('Input restored - console ready', '#00ff88');
+            }
+        } else {
+            console.warn('[Debug] Cannot restore input - console not visible or input not found');
         }
     }
 
@@ -343,6 +535,11 @@ class DebugConsole {
         const gameModeUI = document.getElementById('gameModeUI');
         if (!gameModeUI || gameModeUI.style.display === 'none') {
             return true; // Assume single player if mode selection not visible
+        }
+
+        // Additional check: if we're in a game over state but still in single player
+        if (window.gameOver && !window.gameModeManager) {
+            return true; // Game over in single player mode
         }
 
         return false;
@@ -407,6 +604,11 @@ class DebugConsole {
     }
 
     log(message, color = '#00ff88') {
+        if (!this.output) {
+            console.warn('[Debug] Cannot log - output element missing:', message);
+            return;
+        }
+
         const line = document.createElement('div');
         line.style.color = color;
         line.style.marginBottom = '2px';
@@ -591,10 +793,8 @@ class DebugConsole {
         if (typeof window.restartGame === 'function') {
             window.restartGame();
 
-            // Restore debug console visibility after reset
-            if (wasVisible && !this.isVisible) {
-                this.show();
-            }
+            // Refresh debug console after reset
+            this.reset();
 
             // Log the reset with state information
             this.log('Game reset to initial state', '#00ff88');
@@ -606,10 +806,8 @@ class DebugConsole {
         } else if (typeof restartGame === 'function') {
             restartGame();
 
-            // Restore debug console visibility after reset
-            if (wasVisible && !this.isVisible) {
-                this.show();
-            }
+            // Refresh debug console after reset
+            this.reset();
 
             this.log('Game reset to initial state', '#00ff88');
             if (wasPaused) {
@@ -640,13 +838,18 @@ class DebugConsole {
         this.log('    sync - Force synchronize all game variables', '#cccccc');
         this.log('    pause - Toggle game pause state', '#cccccc');
         this.log('    features - Show feature flags', '#cccccc');
+        this.log('    devEnv - Check development environment status', '#cccccc');
         this.log('    clear - Clear console output', '#cccccc');
         this.log('  Note: Commands are case-sensitive - use exact casing shown above', '#888888');
         return null;
     }
 
     clearOutput() {
-        this.output.innerHTML = '';
+        if (this.output && this.output.innerHTML !== undefined) {
+            this.output.innerHTML = '';
+        } else {
+            console.warn('[Debug] Cannot clear output - output element missing');
+        }
         return null;
     }
 
@@ -822,6 +1025,98 @@ class DebugConsole {
         } else {
             return 'Error: Feature flags not available';
         }
+    }
+
+    checkDevEnvironment() {
+        this.log('=== DEVELOPMENT ENVIRONMENT STATUS ===', '#ffaa00');
+
+        // Check current URL and hosting method
+        const currentURL = window.location.href;
+        this.log('Current Access Method:', '#00ff88');
+
+        if (currentURL.startsWith('file://')) {
+            this.log('  📁 File:// access (direct HTML opening)', '#cccccc');
+            this.log('  ✅ Works for single-player mode', '#00ff88');
+            this.log('  ❌ Limited for P2P multiplayer', '#ff6666');
+        } else if (currentURL.includes('localhost:5500') || currentURL.includes('127.0.0.1:5500')) {
+            this.log('  🔴 VS Code Live Server (port 5500)', '#cccccc');
+            this.log('  ✅ Excellent for development', '#00ff88');
+            this.log('  ⚠️  P2P requires additional setup', '#ffaa00');
+        } else if (currentURL.includes('localhost:8080') || currentURL.includes('localhost:8081')) {
+            this.log('  🐳 Docker containerized environment', '#cccccc');
+            this.log('  ✅ Full P2P multiplayer support', '#00ff88');
+            this.log('  ✅ Cross-origin testing ready', '#00ff88');
+        } else {
+            this.log(`  🌐 ${currentURL}`, '#cccccc');
+            this.log('  ⚠️  Custom hosting detected', '#ffaa00');
+        }
+
+        // Check P2P capabilities
+        this.log('P2P Multiplayer Status:', '#00ff88');
+        if (window.gameModeManager && window.gameModeManager.isP2PCapable) {
+            this.log('  ✅ P2P systems loaded and ready', '#00ff88');
+        } else if (window.gameModeManager) {
+            this.log('  ⚠️  P2P systems loaded but not fully capable', '#ffaa00');
+            this.log('  💡 Try Docker environment for full P2P testing', '#888888');
+        } else {
+            this.log('  ❌ P2P systems not loaded', '#ff6666');
+            this.log('  💡 Ensure PWA mode is available', '#888888');
+        }
+
+        // Check WebRTC support
+        this.log('WebRTC Support:', '#00ff88');
+        if (window.RTCPeerConnection) {
+            this.log('  ✅ WebRTC APIs available', '#00ff88');
+        } else {
+            this.log('  ❌ WebRTC not supported in this browser', '#ff6666');
+        }
+
+        // Check localStorage and cross-origin capabilities
+        this.log('Storage & Cross-Origin:', '#00ff88');
+        try {
+            localStorage.setItem('test', 'test');
+            localStorage.removeItem('test');
+            this.log('  ✅ localStorage available', '#00ff88');
+        } catch (e) {
+            this.log('  ❌ localStorage blocked or unavailable', '#ff6666');
+        }
+
+        // Docker environment specific checks
+        if (currentURL.includes('localhost:808')) {
+            this.log('Docker Environment Health:', '#00ff88');
+
+            // Try to check peer server
+            const peerPort = currentURL.includes('8080') ? '8081' : '8080';
+            const peerURL = `http://localhost:${peerPort}`;
+
+            fetch(peerURL, { method: 'HEAD', mode: 'no-cors' })
+                .then(() => {
+                    this.log(`  ✅ Peer server accessible at ${peerURL}`, '#00ff88');
+                })
+                .catch(() => {
+                    this.log(`  ❌ Peer server not accessible at ${peerURL}`, '#ff6666');
+                    this.log('  💡 Check Docker containers are running', '#888888');
+                });
+        }
+
+        // Development recommendations
+        this.log('Development Recommendations:', '#00ff88');
+
+        if (currentURL.startsWith('file://')) {
+            this.log('  💡 For better development experience:', '#888888');
+            this.log('    - Install VS Code Live Server extension', '#cccccc');
+            this.log('    - Right-click index.html → "Open with Live Server"', '#cccccc');
+        } else if (!currentURL.includes('localhost:808')) {
+            this.log('  💡 For P2P multiplayer testing:', '#888888');
+            this.log('    - Start Docker Desktop', '#cccccc');
+            this.log('    - Run: .\\scripts\\start-p2p-dev.ps1', '#cccccc');
+            this.log('    - Access localhost:8080 and localhost:8081', '#cccccc');
+        } else {
+            this.log('  ✅ You\'re using the optimal development setup!', '#00ff88');
+            this.log('  💡 Open localhost:8080 and 8081 in separate windows for P2P testing', '#888888');
+        }
+
+        return null;
     }
 
     // Autocomplete functionality
@@ -1005,10 +1300,22 @@ class DebugConsole {
 // Wait for DOM to be ready before creating console
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        window.debugConsole = new DebugConsole();
+        if (!window.debugConsole) {
+            window.debugConsole = new DebugConsole();
+        } else {
+            // Console exists but may need UI rebuilt after reset
+            window.debugConsole.ensureUIExists();
+            window.debugConsole.reset();
+        }
     });
 } else {
-    window.debugConsole = new DebugConsole();
+    if (!window.debugConsole) {
+        window.debugConsole = new DebugConsole();
+    } else {
+        // Console exists but may need UI rebuilt after reset
+        window.debugConsole.ensureUIExists();
+        window.debugConsole.reset();
+    }
 }
 
 // Export for module systems
