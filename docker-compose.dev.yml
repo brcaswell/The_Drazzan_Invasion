@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # P2P Host - HTTP server for client files
   drazzan-host:
