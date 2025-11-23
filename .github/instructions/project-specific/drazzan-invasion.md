@@ -20,8 +20,8 @@ last_updated: "2025-11-23"
 **The Drazzan Invasion** is a browser-native space shooter game inspired by classic arcade games like Asteroids. Players control a spaceship defending against the Drazzan alien invasion in space.
 
 ### Core Game Mechanics
-- **Movement**: 360-degree rotation, thrust-based movement with momentum
-- **Combat**: Projectile-based laser weapons with limited ammunition
+- **Movement**: 4-directional movement (up/down/left/right arrow keys), no rotation
+- **Combat**: Projectile-based laser weapons with spacebar shooting
 - **Enemies**: Multiple enemy types with different AI behaviors and attack patterns
 - **Powerups**: Collectible items that enhance ship capabilities
 - **Boss Battles**: Large enemy motherships with complex attack patterns
@@ -264,7 +264,7 @@ function gameLoop() {
 ```
 
 ### Player Ship System (player.js)
-- **Movement**: Rotation with arrow keys/WASD, thrust with spacebar
+- **Movement**: 4-directional movement with arrow keys, spacebar for shooting
 - **Health System**: 100 HP with damage reduction and regeneration
 - **Weapon System**: Limited ammunition with different weapon types
 - **Shield System**: Temporary invincibility with visual feedback
@@ -279,7 +279,7 @@ function gameLoop() {
 ### Physics and Movement
 - **Momentum-Based**: All entities have velocity and momentum
 - **Boundary Wrapping**: Screen-edge wrapping for continuous play area
-- **Rotation System**: 360-degree rotation with smooth interpolation
+- **Movement System**: 4-directional movement without rotation mechanics
 - **Collision Detection**: Circle-based collision for performance
 
 ## @AI-SECTION: development-patterns
@@ -373,8 +373,8 @@ async function loadAssets() {
 
 #### Core Gameplay
 1. **Movement Testing**:
-   - Arrow keys rotate ship smoothly
-   - Spacebar provides thrust with momentum
+   - Arrow keys move ship directionally (up/down/left/right)
+   - Spacebar shoots lasers
    - Ship wraps around screen edges
    - Collision detection works accurately
 
