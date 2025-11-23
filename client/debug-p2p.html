@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>P2P Debug Tool</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 20px;
+        }
+
+        .section {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            margin: 5px;
+            padding: 10px;
+        }
+
+        .log {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        pre {
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>P2P Connection Debug Tool</h1>
+
+    <div class="section">
+        <h2>Current localStorage Signals</h2>
+        <button onclick="showLocalStorageSignals()">Show All Signals</button>
+        <button onclick="clearLocalStorage()">Clear All Signals</button>
+        <div id="localStorageLog"
+             class="log"></div>
+    </div>
+
+    <div class="section">
+        <h2>Game Advertisements</h2>
+        <button onclick="showGameAdvertisements()">Show Game Ads</button>
+        <div id="gameAdsLog"
+             class="log"></div>
+    </div>
+
+    <div class="section">
+        <h2>Test Game Advertisement</h2>
+        <input type="text"
+               id="testGameCode"
+               placeholder="Game Code (e.g., ABC123)"
+               value="TEST01">
+        <input type="text"
+               id="testPeerId"
+               placeholder="Peer ID"
+               value="peer_test_host">
+        <button onclick="createTestAdvertisement()">Create Test Advertisement</button>
+        <div id="testLog"
+             class="log"></div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'drazzan-p2p-signals';
+
+        function log(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML += '<pre>' + message + '</pre>';
+            element.scrollTop = element.scrollHeight;
+        }
+
+        function clearLog(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+
+        function showLocalStorageSignals() {
+            clearLog('localStorageLog');
+            try {
+                const signals = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                log('localStorageLog', `Found ${signals.length} signals in localStorage:`);
+
+                signals.forEach((signal, index) => {
+                    log('localStorageLog', `\n[${index}] ${JSON.stringify(signal, null, 2)}`);
+                });
+
+                if (signals.length === 0) {
+                    log('localStorageLog', 'No signals found in localStorage');
+                }
+            } catch (error) {
+                log('localStorageLog', 'Error reading localStorage: ' + error.message);
+            }
+        }
+
+        function showGameAdvertisements() {
+            clearLog('gameAdsLog');
+            try {
+                const signals = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                const gameAds = signals.filter(signal => signal.type === 'game-advertisement');
+
+                log('gameAdsLog', `Found ${gameAds.length} game advertisements:`);
+
+                gameAds.forEach((ad, index) => {
+                    log('gameAdsLog', `\n[${index}] Game Code: ${ad.gameInfo?.gameCode}`);
+                    log('gameAdsLog', `    Host ID: ${ad.gameInfo?.hostId}`);
+                    log('gameAdsLog', `    Timestamp: ${new Date(ad.timestamp).toLocaleString()}`);
+                    log('gameAdsLog', `    Age: ${Math.round((Date.now() - ad.timestamp) / 1000)}s ago`);
+                    log('gameAdsLog', `    Full data: ${JSON.stringify(ad, null, 2)}`);
+                });
+
+                if (gameAds.length === 0) {
+                    log('gameAdsLog', 'No game advertisements found');
+                }
+            } catch (error) {
+                log('gameAdsLog', 'Error reading game advertisements: ' + error.message);
+            }
+        }
+
+        function clearLocalStorage() {
+            localStorage.removeItem(STORAGE_KEY);
+            log('localStorageLog', 'localStorage cleared');
+        }
+
+        function createTestAdvertisement() {
+            clearLog('testLog');
+            try {
+                const gameCode = document.getElementById('testGameCode').value;
+                const peerId = document.getElementById('testPeerId').value;
+
+                if (!gameCode || !peerId) {
+                    log('testLog', 'Please enter both game code and peer ID');
+                    return;
+                }
+
+                const signals = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+                const testAd = {
+                    id: 'test_' + Date.now(),
+                    type: 'game-advertisement',
+                    sourcePeer: peerId,
+                    targetPeer: null, // Broadcast
+                    timestamp: Date.now(),
+                    gameInfo: {
+                        hostId: peerId,
+                        gameCode: gameCode,
+                        gameType: 'drazzan-invasion',
+                        maxPlayers: 4,
+                        currentPlayers: 1
+                    }
+                };
+
+                signals.push(testAd);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(signals));
+
+                log('testLog', 'Test advertisement created:');
+                log('testLog', JSON.stringify(testAd, null, 2));
+                log('testLog', '\nNow try joining with game code: ' + gameCode);
+            } catch (error) {
+                log('testLog', 'Error creating test advertisement: ' + error.message);
+            }
+        }
+
+        // Auto-refresh every 5 seconds
+        setInterval(() => {
+            if (document.getElementById('localStorageLog').innerHTML) {
+                showLocalStorageSignals();
+            }
+            if (document.getElementById('gameAdsLog').innerHTML) {
+                showGameAdvertisements();
+            }
+        }, 5000);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,11 @@
+(module
+  (memory (export "memory") 1)
+  (func $initializeServer (param $mode i32) (result i32)
+    (i32.const 1)
+  )
+  (export "initializeServer" (func $initializeServer))
+  (func $addPlayer (param $playerId i32) (param $x f32) (param $y f32) (result i32)
+    (i32.const 1)
+  )
+  (export "addPlayer" (func $addPlayer))
+)

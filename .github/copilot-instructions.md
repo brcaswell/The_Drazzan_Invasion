@@ -1,0 +1,339 @@
+# GitHub Copilot Instructions - Migration Notice
+
+## 🔄 Instruction System Migration
+
+**This file has been migrated to a new structured instruction system.**
+
+### New Location
+**Primary Entry Point**: `.github/instructions/copilot-entry-point.md`
+
+### Enhanced Organization
+The AI instruction system has been restructured for better organization and reusability:
+
+```
+.github/instructions/
+├── copilot-entry-point.md          # Main AI entry point with discovery
+├── README.md                       # Migration guide and documentation
+├── tech-specific/                  # Technology-specific patterns
+│   ├── javascript.md              # ES6+ and browser patterns
+│   ├── html-web.md                # HTML, CSS, PWA basics
+│   ├── pwa-webrtc.md              # Multiplayer and networking
+│   └── canvas-wasm.md             # Graphics and performance
+├── project-specific/               # Project-specific context
+│   └── drazzan-invasion.md        # Game-specific instructions
+└── schemas/
+    └── instruction-schema.json     # Validation schema
+```
+
+### Benefits of New System
+- **Structured Metadata**: YAML frontmatter with AI context types
+- **Organized Sections**: @AI-SECTION: markers for better parsing
+- **Technology Separation**: Reusable tech-specific instruction files
+- **Project Context**: Dedicated game-specific instructions and debug commands
+- **Validation**: JSON schema for instruction file structure
+- **Discovery**: Automated AI discovery patterns
+
+### For AI Systems
+**Start here**: `.github/instructions/copilot-entry-point.md`
+
+The entry point contains a discovery algorithm that will automatically load:
+1. Technology-specific instructions based on project type detection
+2. Project-specific instructions for The Drazzan Invasion
+3. Validation schemas and structured metadata
+
+---
+
+**✅ Migration Complete**: All content has been successfully migrated to the structured instruction system.
+
+### AI Instruction System vs. Guide Documentation
+
+**Understanding the Distinction**: The AI instruction system in `.github/instructions/` contains actionable technical patterns that AI systems should follow during development. Files in `.github/` (not in subdirectory) serve different purposes:
+
+#### What Goes in `.github/instructions/` (AI Instruction System)
+- **Technical Patterns**: Code structures, API usage, architectural patterns
+- **Actionable Guidelines**: "Apply to: `**/*.js`", implementation templates, function patterns
+- **AI Decision Rules**: When to use specific approaches, validation criteria
+- **Tool Integration**: How AI should interact with build tools, testing frameworks
+- **Enforcement Mechanisms**: Validation rules, compliance functions
+
+#### What Stays in `.github/` (Guide Documentation)  
+- **Historical Context**: Why patterns evolved, problem-solution documentation (`instruction-separation-guide.md`)
+- **Implementation Guides**: Step-by-step setup for humans, success metrics (`docs-guide.md`)
+- **Educational Content**: Learning journeys, iteration phases, comprehensive examples
+- **Meta-Documentation**: Documentation about documentation, organizational principles
+- **Human Decision Context**: Business reasoning, trade-off analysis, project-specific rationale
+
+**Naming Convention**: Files in `.github/` that are guides should use `-guide.md` suffix, not `-instructions.md`
+
+#### Relationship to `docs/`
+- **`docs/`**: Project-specific documentation, architecture decisions, implementation guides
+- **`.github/`**: Development workflow documentation, instruction system guides, AI context
+- **`.github/instructions/`**: AI-actionable technical instruction patterns only
+
+This separation ensures AI systems receive focused, actionable guidance while preserving comprehensive educational and contextual documentation for human developers.
+
+### Technology Stack
+- **Frontend**: HTML5 Canvas, Vanilla JavaScript (ES6+ modules)
+- **Networking**: WebRTC peer-to-peer multiplayer (no central servers)
+- **WebAssembly**: WebAssembly-based peer modules (compiled from Rust/C++)
+- **Architecture**: Progressive Web App (PWA) with Electron desktop wrapper
+- **Build Tools**: No build process required for basic development
+- **Testing**: Browser-based, no external dependencies
+
+### Key Architecture Principles
+1. **Decentralized**: No central servers, everything runs in browser
+2. **P2P First**: WebRTC for all multiplayer communication
+3. **Browser Native**: Designed to run directly from `index.html`
+4. **Progressive**: Works offline, installable as PWA
+5. **Cross-Platform**: Web + Electron desktop support
+
+## Development Environment
+
+### Platform
+- **Cross-Platform**: Support Windows, macOS, and Linux development
+- **Shell Agnostic**: Provide commands for multiple shells when needed
+  - Windows: PowerShell, Command Prompt
+  - Unix: bash, zsh, fish
+  - Use forward slashes for paths when possible
+
+### Testing & Development Server
+**NEVER use Python `http.server`** - this is a JavaScript project!
+
+**Preferred methods** (in order):
+1. **Direct browser testing**: Double-click `client/index.html`
+2. **VS Code Live Server**: Right-click → "Open with Live Server"
+3. **Node.js server**: `npx http-server -p 8080` (if Node.js available)
+4. **Direct Opening**: Open `index.html` in default browser
+   - Windows: `Start-Process "index.html"`
+   - macOS: `open index.html`
+   - Linux: `xdg-open index.html`
+
+### File Structure
+```
+project-root/
+├── client/                          # Main application client
+│   ├── index.html                  # Entry point - start here
+│   ├── js/                         # Application logic
+│   │   ├── pwa/                   # Multiplayer & PWA systems
+│   │   └── *.js                   # Core application components
+│   ├── css/                        # Styles
+│   ├── assets/                     # Application assets
+│   └── wasm/                       # WebAssembly modules
+├── desktop/                         # Electron wrapper (optional)
+├── docs/                           # Documentation
+└── .github/                        # GitHub configuration & AI instructions
+```
+
+**Key Directories**:
+- **`client/`**: Main application code (start with `index.html`)
+- **`client/js/pwa/`**: PWA and multiplayer functionality
+- **`desktop/`**: Electron desktop wrapper (optional)
+- **`.github/`**: AI instructions and GitHub configuration (always at project root)
+
+## Code Style & Patterns
+
+### JavaScript Conventions
+- **Modules**: Use ES6 modules (`import`/`export`)
+- **Classes**: Use modern class syntax
+- **Async**: Prefer `async`/`await` over promises
+- **Naming**: 
+  - Classes: `PascalCase`
+  - Functions/variables: `camelCase`
+  - Constants: `UPPER_SNAKE_CASE`
+  - Files: `kebab-case.js`
+
+### Application Architecture Patterns
+- **Component System**: Separate concerns (Canvas, Input, Logic, etc.)
+- **State Management**: Centralized application state with clear ownership
+- **Event-Driven**: Use callbacks and event listeners
+- **Multiplayer**: Host-authoritative with peer validation
+
+## Specific Instructions by File Type
+
+### Apply to: `**/*.js` (Core Application Files)
+- Follow existing single-player patterns when extending
+- Always check for global object existence before use
+- Use existing canvas and input systems
+- Maintain 60 FPS performance targets
+
+### Apply to: `**/pwa/*.js` (Multiplayer System)
+- Use modern ES6+ features and modules
+- Implement proper error handling and fallbacks
+- Design for offline-first, network-optional operation
+- Follow established GameModeManager patterns
+
+### Apply to: `**/*.html`
+- Maintain PWA manifest and service worker integration
+- Use semantic HTML5 elements
+- Ensure mobile responsiveness
+- Load JavaScript modules in correct dependency order
+
+### Apply to: `**/*.css`
+- Use CSS custom properties (variables)
+- Implement mobile-first responsive design
+- Maintain consistent visual theme
+- Optimize for Canvas overlay UI elements
+
+### Apply to: `**/wasm/*`
+- WebAssembly files are pre-compiled
+- JavaScript bridge files handle WASM integration
+- Fallback to pure JS if WASM unavailable
+- Memory management is critical
+
+## Common Tasks & Patterns
+
+### Adding New Application Features
+1. Check existing single-player implementation
+2. Create component following established patterns
+3. Add multiplayer support if needed
+4. Test in browser console first
+5. Update integration bridge if required
+
+### Debugging Workflow
+1. Open `client/index.html` in browser
+2. Use Developer Console (F12)
+3. Test with `gameIntegration.test()`
+4. Check Network tab for loading issues
+5. Use `console.log` liberally during development
+
+### Network Integration
+- Always provide offline fallbacks
+- Use WebRTC DataChannels for application state
+- Implement connection failure recovery
+- Design for variable latency (50-500ms)
+
+## Anti-Patterns to Avoid
+
+### Technology Mismatches
+- ❌ Don't suggest Python solutions for JavaScript problems
+- ❌ Don't use Node.js build tools unnecessarily
+- ❌ Don't require server-side components for basic features
+- ❌ Don't break the "works from file://" principle
+
+### Architecture Violations
+- ❌ Don't create central server dependencies
+- ❌ Don't break offline functionality
+- ❌ Don't require external service accounts
+- ❌ Don't violate decentralized principles
+
+### Code Quality Issues
+- ❌ Don't modify existing working single-player code unnecessarily
+- ❌ Don't create circular dependencies between modules
+- ❌ Don't block the main thread with heavy computations
+- ❌ Don't create memory leaks in long-running applications
+
+## Current Implementation Status
+
+### ✅ Completed Systems
+- **PWA Architecture**: Complete with service worker, manifest, offline support
+- **WebRTC Networking**: P2P infrastructure with WebAssembly server fallback
+- **Electron Desktop**: Cross-platform desktop app wrapper
+- **Mode System**: Single/Cooperative/Versus mode selection and lobby
+- **Multiplayer Foundation**: Application state synchronization and player management
+- **Single Player Integration**: Maintains compatibility with existing functionality
+
+### 🔄 Active Development Areas
+- **Network State Synchronization**: Latency compensation and rollback
+- **Mode Features**: Cooperative and versus mode specific mechanics
+- **UI Polish**: Enhanced multiplayer lobby and application interface
+
+### 📋 Architecture Decisions
+- **Host-Authoritative**: Host maintains canonical application state
+- **Peer Validation**: Non-host peers validate and predict
+- **Ad-hoc Networking**: Players can join/leave dynamically
+- **Graceful Degradation**: Always fall back to single-player
+
+## AI-Assisted Development Workflow
+
+### Feature Branch Context
+Always consider the current feature branch context when making suggestions:
+- **Current Branch**: Check git branch name for feature context
+- **Session Scope**: Focus on files and components related to current work session
+- **Documentation**: Update relevant documentation files alongside code changes
+- **Git Staging**: Only suggest staging files actually modified in current session
+
+### Work Session Guidelines
+1. **Session Scope**: Understand the specific feature or bug being addressed
+2. **Component Focus**: Concentrate on files and systems directly related to current work
+3. **Integration Points**: Identify where new code connects to existing systems
+4. **Documentation Updates**: Include architecture docs, README updates, session logs
+5. **Testing Strategy**: Suggest appropriate testing for the current feature
+
+### Git Best Practices for AI Work
+```bash
+# Good: Stage only files modified in current session
+git add client/js/pwa/game-mode-manager.js    # New file created this session
+git add docs/multiplayer-architecture.md       # Documentation for this feature
+git add .github/copilot-instructions.md        # Updated AI context
+
+# Avoid: Broad staging that includes unrelated changes
+# git add . (too broad)
+# git add client/ (includes unmodified files)
+```
+
+### Decision Logging
+Document architectural decisions made during AI-assisted development:
+- **Why**: Reasoning behind implementation choices
+- **AI Input**: What AI tools suggested vs. human decisions
+- **Alternatives**: Other approaches considered and why they were rejected
+- **Impact**: How changes affect existing systems and future development
+
+## Key Patterns & Lessons Learned
+
+### Debug Tools & Development Experience
+**Pattern**: Debug tools should be contextually appropriate and non-intrusive
+- **Single Player Context**: Debug console only available in single player mode for application balance
+- **User Intent Respect**: Case-sensitive command matching respects developer typing conventions
+- **Progressive Enhancement**: Add autocomplete/intellisense for discoverability without breaking existing workflows
+- **Integration Testing**: Debug tools should provide easy access to test complex application states (see project-specific instructions for examples)
+
+### Feature Flag Architecture
+**Pattern**: Feature flags should control both UI state and functional availability
+- **UI Integration**: Disabled features show "Coming Soon" states rather than hidden UI
+- **Progressive Rollout**: Enable single-player first, then cooperative, then versus modes
+- **Environment Awareness**: Different flag behaviors for development vs production
+- **URL Overrides**: Allow feature enabling via URL parameters for testing
+
+### Global State Management in Vanilla JS
+**Pattern**: Explicit window object synchronization for cross-component access
+- **Variable Exports**: Application state variables must be explicitly exported to `window` object
+- **Synchronization Points**: Update window globals whenever local variables change
+- **Debug Access**: Global variables enable debug console to inspect and modify application state
+- **Component Communication**: PWA components can access application state through window globals
+
+### User Interface Consistency
+**Pattern**: Restart flows should maintain user context and expectations
+- **Context Preservation**: "Play Again" should restart application, not return to menu selection
+- **State Reset**: Proper application state reset without full page reload
+- **User Flow**: Minimize steps between application sessions for better experience
+
+### Command Line Interface Design
+**Pattern**: Modern CLI expectations apply to in-game consoles
+- **Autocomplete**: Ctrl+Space pattern familiar from IDEs and terminals
+- **Smart Matching**: Prefix, exact, and contains matching with priority ordering
+- **Visual Feedback**: Syntax highlighting and selection indication
+- **Keyboard Navigation**: Arrow keys, Tab, Enter, Escape follow standard conventions
+
+### Development Tool Integration
+**Pattern**: Debug tools should integrate with existing development workflows
+- **Browser Console Integration**: Debug commands log to both custom UI and browser console
+- **Feature Discovery**: Help systems should show exact command syntax and examples
+- **Error Reporting**: Clear error messages with actionable suggestions
+- **State Inspection**: Comprehensive game state debugging with variable types and availability
+
+### Command Line Interface Patterns
+**Pattern**: In-game consoles should follow modern terminal UX expectations
+- **Autocomplete System**: Ctrl+Space triggers suggestions with smart matching (prefix > exact > contains)
+- **Navigation Conventions**: Arrow keys for history/selection, Tab/Enter for completion, Escape to close
+- **Visual Feedback**: Syntax highlighting, selection indication, scrollable suggestions
+- **Error Handling**: Graceful null handling, clear error messages, command validation
+- **Context Awareness**: Commands should validate preconditions and provide helpful guidance
+
+### Security & Game Balance Considerations
+**Pattern**: Debug features must not compromise multiplayer integrity
+- **Mode Restrictions**: Debug console only available in single-player mode
+- **Validation Gates**: Always check game mode before enabling debug features
+- **State Isolation**: Debug commands should not affect multiplayer game state
+- **Feature Flags**: Use feature flag system to control debug tool availability
+
+This document should be referenced for all development decisions to maintain consistency with the established architecture and technology choices.

@@ -1,0 +1,107 @@
+# Logs
+logs/
+*.log
+
+# P2P Development only (no server dependencies)
+# WebAssembly build artifacts (keep build directory, ignore temp files)
+client/wasm/build/*.tmp
+client/wasm/build/*.temp
+
+# Development containers (P2P testing only)
+# Note: No server node_modules since this is client-side only
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Docker volumes (P2P development only)
+data/
+
+# P2P testing artifacts
+*.p2p-test
+*.webrtc-log
+
+# IDE files
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Chrome user data directories (for P2P testing)
+.chrome-peer/
+.chrome-host/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.backup
+*.bak
+
+# P2P WebAssembly specific
+client/wasm/src/*.o
+client/wasm/src/*.bc
+*.wasm.map

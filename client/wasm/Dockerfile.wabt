@@ -1,0 +1,11 @@
+# Minimal, secure WebAssembly tools image built from official Alpine
+FROM alpine:3.18
+
+# Install Binaryen (includes wasm-as for WAT to WASM conversion)
+RUN apk add --no-cache binaryen
+
+# Create working directory
+WORKDIR /app
+
+# Default command
+CMD ["sh"]

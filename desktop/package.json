@@ -1,0 +1,116 @@
+{
+  "name": "drazzan-invasion-desktop",
+  "version": "2.0.0",
+  "description": "The Drazzan Invasion - Desktop Edition with Enhanced P2P Capabilities",
+  "main": "src/main.js",
+  "author": "brcaswell",
+  "license": "MIT",
+  "homepage": "https://github.com/brcaswell/The_Drazzan_Invasion",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac", 
+    "build:linux": "electron-builder --linux",
+    "pack": "electron-builder --dir",
+    "dist": "npm run build",
+    "postinstall": "electron-builder install-app-deps",
+    "rebuild": "electron-rebuild"
+  },
+  "keywords": [
+    "game",
+    "space-shooter",
+    "multiplayer",
+    "p2p",
+    "webassembly",
+    "electron"
+  ],
+  "build": {
+    "appId": "com.drazzan.invasion",
+    "productName": "Drazzan Invasion",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "node_modules/**/*",
+      "!node_modules/.cache/**/*",
+      "../client/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../client",
+        "to": "app",
+        "filter": [
+          "**/*",
+          "!node_modules"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "mac": {
+      "category": "public.app-category.games",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "Game"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "brcaswell",
+      "repo": "The_Drazzan_Invasion"
+    }
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.1.4",
+    "node-datachannel": "^0.4.0",
+    "webtorrent-desktop": "^0.24.0"
+  },
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4",
+    "electron-rebuild": "^3.2.9"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

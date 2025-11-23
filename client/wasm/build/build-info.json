@@ -1,0 +1,15 @@
+{
+  "buildTime": "'$(date -Iseconds)'",
+  "builder": "Docker Emscripten",
+  "modules": {
+    "gameServer": {
+      "type": "wasm",
+      "fallback": "JavaScript implementation available"
+    }
+  },
+  "notes": [
+    "Built in containerized environment",
+    "No host Node.js dependencies required", 
+    "JavaScript fallback provides full functionality"
+  ]
+}

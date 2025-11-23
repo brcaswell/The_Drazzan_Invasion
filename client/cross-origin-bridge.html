@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Cross-Origin P2P Bridge</title>
+</head>
+
+<body>
+    <div id="signal-bridge"
+         style="display: none;">
+        <!-- This page serves as a cross-origin communication bridge -->
+    </div>
+
+    <script>
+        // Cross-origin bridge for P2P signaling
+        // This page can receive postMessage from parent and store/forward signals
+
+        const STORAGE_KEY = 'drazzan-p2p-signals';
+        console.log('[Bridge] Cross-origin bridge loaded on:', window.location.origin);
+
+        // Listen for messages from parent window
+        window.addEventListener('message', (event) => {
+            console.log('[Bridge] Received message:', event.data);
+
+            if (event.data.type === 'get-signals') {
+                try {
+                    const signals = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                    console.log(`[Bridge] Sending ${signals.length} signals to parent`);
+
+                    event.source.postMessage({
+                        type: 'bridge-signals',
+                        signals: signals
+                    }, event.origin);
+                } catch (error) {
+                    console.error('[Bridge] Error getting signals:', error);
+                    event.source.postMessage({
+                        type: 'bridge-error',
+                        error: error.message
+                    }, event.origin);
+                }
+            }
+
+            if (event.data.type === 'store-signal') {
+                try {
+                    const signals = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                    signals.push(event.data.signal);
+
+                    // Keep recent messages only (5 minutes)
+                    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+                    const recentSignals = signals.filter(msg => msg.timestamp > fiveMinutesAgo);
+
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(recentSignals));
+                    console.log(`[Bridge] Stored signal, total: ${recentSignals.length}`);
+
+                    event.source.postMessage({
+                        type: 'bridge-stored',
+                        success: true
+                    }, event.origin);
+                } catch (error) {
+                    console.error('[Bridge] Error storing signal:', error);
+                    event.source.postMessage({
+                        type: 'bridge-error',
+                        error: error.message
+                    }, event.origin);
+                }
+            }
+        });
+
+        // Notify parent that bridge is ready
+        window.addEventListener('load', () => {
+            console.log('[Bridge] Bridge ready, notifying parent');
+            window.parent.postMessage({
+                type: 'bridge-ready',
+                origin: window.location.origin
+            }, '*');
+        });
+
+        // Periodically clean old signals
+        setInterval(() => {
+            try {
+                const signals = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+                const recentSignals = signals.filter(s => s.timestamp > fiveMinutesAgo);
+
+                if (recentSignals.length !== signals.length) {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(recentSignals));
+                    console.log(`[Bridge] Cleaned old signals, ${recentSignals.length} remaining`);
+                }
+            } catch (error) {
+                // Ignore cleanup errors
+            }
+        }, 30000); // Clean every 30 seconds
+
+        console.log('[Bridge] Cross-origin P2P bridge ready');
+    </script>
+</body>
+
+</html>
