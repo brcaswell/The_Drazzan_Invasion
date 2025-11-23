@@ -1,9 +1,9 @@
-# Documentation & AI-Assisted Development Instructions
+# Documentation & AI-Assisted Development Guide
 
-## Apply to: `docs/**/*.md`, `README.md`, `.github/**/*.md` (Documentation Files)
+**Purpose**: Educational guide for organizing documentation in AI-assisted development projects. This is guide content, not AI instruction patterns.
 
 ### Context
-Documentation in The Drazzan Invasion serves as the foundation for AI-assisted development, providing context for GitHub Copilot and other AI tools while maintaining comprehensive guides for human developers. All documentation should support both AI understanding and human comprehension.
+Documentation serves as the foundation for AI-assisted development, providing context for GitHub Copilot and other AI tools while maintaining comprehensive guides for human developers. All documentation should support both AI understanding and human comprehension.
 
 ### AI-Assisted Development Philosophy
 1. **Context-Rich**: Provide comprehensive context for AI tools to make informed suggestions

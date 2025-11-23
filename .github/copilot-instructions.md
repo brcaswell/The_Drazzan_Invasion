@@ -1,19 +1,87 @@
-# GitHub Copilot Instructions for The Drazzan Invasion
+# GitHub Copilot Instructions - Migration Notice
 
-## Project Overview
+## 🔄 Instruction System Migration
 
-**The Drazzan Invasion** is a decentralized multiplayer space shooter game built with modern web technologies. This is a **pure client-side JavaScript project** with no server dependencies for basic functionality.
+**This file has been migrated to a new structured instruction system.**
+
+### New Location
+**Primary Entry Point**: `.github/instructions/copilot-entry-point.md`
+
+### Enhanced Organization
+The AI instruction system has been restructured for better organization and reusability:
+
+```
+.github/instructions/
+├── copilot-entry-point.md          # Main AI entry point with discovery
+├── README.md                       # Migration guide and documentation
+├── tech-specific/                  # Technology-specific patterns
+│   ├── javascript.md              # ES6+ and browser patterns
+│   ├── html-web.md                # HTML, CSS, PWA basics
+│   ├── pwa-webrtc.md              # Multiplayer and networking
+│   └── canvas-wasm.md             # Graphics and performance
+├── project-specific/               # Project-specific context
+│   └── drazzan-invasion.md        # Game-specific instructions
+└── schemas/
+    └── instruction-schema.json     # Validation schema
+```
+
+### Benefits of New System
+- **Structured Metadata**: YAML frontmatter with AI context types
+- **Organized Sections**: @AI-SECTION: markers for better parsing
+- **Technology Separation**: Reusable tech-specific instruction files
+- **Project Context**: Dedicated game-specific instructions and debug commands
+- **Validation**: JSON schema for instruction file structure
+- **Discovery**: Automated AI discovery patterns
+
+### For AI Systems
+**Start here**: `.github/instructions/copilot-entry-point.md`
+
+The entry point contains a discovery algorithm that will automatically load:
+1. Technology-specific instructions based on project type detection
+2. Project-specific instructions for The Drazzan Invasion
+3. Validation schemas and structured metadata
+
+---
+
+**✅ Migration Complete**: All content has been successfully migrated to the structured instruction system.
+
+### AI Instruction System vs. Guide Documentation
+
+**Understanding the Distinction**: The AI instruction system in `.github/instructions/` contains actionable technical patterns that AI systems should follow during development. Files in `.github/` (not in subdirectory) serve different purposes:
+
+#### What Goes in `.github/instructions/` (AI Instruction System)
+- **Technical Patterns**: Code structures, API usage, architectural patterns
+- **Actionable Guidelines**: "Apply to: `**/*.js`", implementation templates, function patterns
+- **AI Decision Rules**: When to use specific approaches, validation criteria
+- **Tool Integration**: How AI should interact with build tools, testing frameworks
+- **Enforcement Mechanisms**: Validation rules, compliance functions
+
+#### What Stays in `.github/` (Guide Documentation)  
+- **Historical Context**: Why patterns evolved, problem-solution documentation (`instruction-separation-guide.md`)
+- **Implementation Guides**: Step-by-step setup for humans, success metrics (`docs-guide.md`)
+- **Educational Content**: Learning journeys, iteration phases, comprehensive examples
+- **Meta-Documentation**: Documentation about documentation, organizational principles
+- **Human Decision Context**: Business reasoning, trade-off analysis, project-specific rationale
+
+**Naming Convention**: Files in `.github/` that are guides should use `-guide.md` suffix, not `-instructions.md`
+
+#### Relationship to `docs/`
+- **`docs/`**: Project-specific documentation, architecture decisions, implementation guides
+- **`.github/`**: Development workflow documentation, instruction system guides, AI context
+- **`.github/instructions/`**: AI-actionable technical instruction patterns only
+
+This separation ensures AI systems receive focused, actionable guidance while preserving comprehensive educational and contextual documentation for human developers.
 
 ### Technology Stack
 - **Frontend**: HTML5 Canvas, Vanilla JavaScript (ES6+ modules)
 - **Networking**: WebRTC peer-to-peer multiplayer (no central servers)
-- **Game Servers**: WebAssembly-based peer servers (compiled from Rust/C++)
+- **WebAssembly**: WebAssembly-based peer modules (compiled from Rust/C++)
 - **Architecture**: Progressive Web App (PWA) with Electron desktop wrapper
 - **Build Tools**: No build process required for basic development
 - **Testing**: Browser-based, no external dependencies
 
 ### Key Architecture Principles
-1. **Decentralized**: No central game servers, everything runs in browser
+1. **Decentralized**: No central servers, everything runs in browser
 2. **P2P First**: WebRTC for all multiplayer communication
 3. **Browser Native**: Designed to run directly from `index.html`
 4. **Progressive**: Works offline, installable as PWA
@@ -22,11 +90,11 @@
 ## Development Environment
 
 ### Platform
-- **OS**: Windows (PowerShell as primary shell)
-- **Shell Syntax**: Use PowerShell commands, not bash/Linux
-  - Command chaining: `;` not `&&`
-  - Path separators: `\` or `/` (both work)
-  - Case insensitive file system
+- **Cross-Platform**: Support Windows, macOS, and Linux development
+- **Shell Agnostic**: Provide commands for multiple shells when needed
+  - Windows: PowerShell, Command Prompt
+  - Unix: bash, zsh, fish
+  - Use forward slashes for paths when possible
 
 ### Testing & Development Server
 **NEVER use Python `http.server`** - this is a JavaScript project!
@@ -35,23 +103,32 @@
 1. **Direct browser testing**: Double-click `client/index.html`
 2. **VS Code Live Server**: Right-click → "Open with Live Server"
 3. **Node.js server**: `npx http-server -p 8080` (if Node.js available)
-4. **PowerShell**: `Start-Process "index.html"` to open in default browser
+4. **Direct Opening**: Open `index.html` in default browser
+   - Windows: `Start-Process "index.html"`
+   - macOS: `open index.html`
+   - Linux: `xdg-open index.html`
 
 ### File Structure
 ```
-The_Drazzan_Invasion/
-├── client/                 # Main game client
-│   ├── index.html         # Entry point
-│   ├── js/                # Game logic
-│   │   ├── pwa/          # Multiplayer & PWA systems
-│   │   └── *.js          # Core game components
-│   ├── css/              # Styles
-│   ├── assets/           # Game assets
-│   └── wasm/             # WebAssembly game servers
-├── desktop/              # Electron wrapper
-├── docs/                 # Documentation
-└── .github/              # GitHub configuration
+project-root/
+├── client/                          # Main application client
+│   ├── index.html                  # Entry point - start here
+│   ├── js/                         # Application logic
+│   │   ├── pwa/                   # Multiplayer & PWA systems
+│   │   └── *.js                   # Core application components
+│   ├── css/                        # Styles
+│   ├── assets/                     # Application assets
+│   └── wasm/                       # WebAssembly modules
+├── desktop/                         # Electron wrapper (optional)
+├── docs/                           # Documentation
+└── .github/                        # GitHub configuration & AI instructions
 ```
+
+**Key Directories**:
+- **`client/`**: Main application code (start with `index.html`)
+- **`client/js/pwa/`**: PWA and multiplayer functionality
+- **`desktop/`**: Electron desktop wrapper (optional)
+- **`.github/`**: AI instructions and GitHub configuration (always at project root)
 
 ## Code Style & Patterns
 
@@ -65,18 +142,18 @@ The_Drazzan_Invasion/
   - Constants: `UPPER_SNAKE_CASE`
   - Files: `kebab-case.js`
 
-### Game Architecture Patterns
-- **Component System**: Separate concerns (Canvas, Input, Physics, etc.)
-- **State Management**: Centralized game state with clear ownership
+### Application Architecture Patterns
+- **Component System**: Separate concerns (Canvas, Input, Logic, etc.)
+- **State Management**: Centralized application state with clear ownership
 - **Event-Driven**: Use callbacks and event listeners
 - **Multiplayer**: Host-authoritative with peer validation
 
 ## Specific Instructions by File Type
 
-### Apply to: `**/*.js` (Core Game Files)
+### Apply to: `**/*.js` (Core Application Files)
 - Follow existing single-player patterns when extending
 - Always check for global object existence before use
-- Use existing collision detection, canvas, and input systems
+- Use existing canvas and input systems
 - Maintain 60 FPS performance targets
 
 ### Apply to: `**/pwa/*.js` (Multiplayer System)
@@ -94,7 +171,7 @@ The_Drazzan_Invasion/
 ### Apply to: `**/*.css`
 - Use CSS custom properties (variables)
 - Implement mobile-first responsive design
-- Maintain retro sci-fi aesthetic
+- Maintain consistent visual theme
 - Optimize for Canvas overlay UI elements
 
 ### Apply to: `**/wasm/*`
@@ -105,7 +182,7 @@ The_Drazzan_Invasion/
 
 ## Common Tasks & Patterns
 
-### Adding New Game Features
+### Adding New Application Features
 1. Check existing single-player implementation
 2. Create component following established patterns
 3. Add multiplayer support if needed
@@ -121,7 +198,7 @@ The_Drazzan_Invasion/
 
 ### Network Integration
 - Always provide offline fallbacks
-- Use WebRTC DataChannels for game state
+- Use WebRTC DataChannels for application state
 - Implement connection failure recovery
 - Design for variable latency (50-500ms)
 
@@ -143,7 +220,7 @@ The_Drazzan_Invasion/
 - ❌ Don't modify existing working single-player code unnecessarily
 - ❌ Don't create circular dependencies between modules
 - ❌ Don't block the main thread with heavy computations
-- ❌ Don't create memory leaks in long-running games
+- ❌ Don't create memory leaks in long-running applications
 
 ## Current Implementation Status
 
@@ -151,17 +228,17 @@ The_Drazzan_Invasion/
 - **PWA Architecture**: Complete with service worker, manifest, offline support
 - **WebRTC Networking**: P2P infrastructure with WebAssembly server fallback
 - **Electron Desktop**: Cross-platform desktop app wrapper
-- **Game Mode System**: Single/Cooperative/Versus mode selection and lobby
-- **Multiplayer Foundation**: Game state synchronization and player management
-- **Single Player Integration**: Maintains compatibility with existing gameplay
+- **Mode System**: Single/Cooperative/Versus mode selection and lobby
+- **Multiplayer Foundation**: Application state synchronization and player management
+- **Single Player Integration**: Maintains compatibility with existing functionality
 
 ### 🔄 Active Development Areas
 - **Network State Synchronization**: Latency compensation and rollback
-- **Game Mode Features**: Cooperative and versus mode specific mechanics
-- **UI Polish**: Enhanced multiplayer lobby and game interface
+- **Mode Features**: Cooperative and versus mode specific mechanics
+- **UI Polish**: Enhanced multiplayer lobby and application interface
 
 ### 📋 Architecture Decisions
-- **Host-Authoritative**: Host maintains canonical game state
+- **Host-Authoritative**: Host maintains canonical application state
 - **Peer Validation**: Non-host peers validate and predict
 - **Ad-hoc Networking**: Players can join/leave dynamically
 - **Graceful Degradation**: Always fall back to single-player
@@ -205,10 +282,10 @@ Document architectural decisions made during AI-assisted development:
 
 ### Debug Tools & Development Experience
 **Pattern**: Debug tools should be contextually appropriate and non-intrusive
-- **Single Player Context**: Debug console only available in single player mode for game balance
+- **Single Player Context**: Debug console only available in single player mode for application balance
 - **User Intent Respect**: Case-sensitive command matching respects developer typing conventions
 - **Progressive Enhancement**: Add autocomplete/intellisense for discoverability without breaking existing workflows
-- **Integration Testing**: Debug tools should provide easy access to test complex game states (e.g., skip to boss fight)
+- **Integration Testing**: Debug tools should provide easy access to test complex application states (see project-specific instructions for examples)
 
 ### Feature Flag Architecture
 **Pattern**: Feature flags should control both UI state and functional availability
@@ -219,16 +296,16 @@ Document architectural decisions made during AI-assisted development:
 
 ### Global State Management in Vanilla JS
 **Pattern**: Explicit window object synchronization for cross-component access
-- **Variable Exports**: Game state variables must be explicitly exported to `window` object
+- **Variable Exports**: Application state variables must be explicitly exported to `window` object
 - **Synchronization Points**: Update window globals whenever local variables change
-- **Debug Access**: Global variables enable debug console to inspect and modify game state
-- **Component Communication**: PWA components can access game state through window globals
+- **Debug Access**: Global variables enable debug console to inspect and modify application state
+- **Component Communication**: PWA components can access application state through window globals
 
 ### User Interface Consistency
 **Pattern**: Restart flows should maintain user context and expectations
-- **Context Preservation**: "Play Again" should restart game, not return to menu selection
-- **State Reset**: Proper game state reset without full page reload
-- **User Flow**: Minimize steps between game sessions for better experience
+- **Context Preservation**: "Play Again" should restart application, not return to menu selection
+- **State Reset**: Proper application state reset without full page reload
+- **User Flow**: Minimize steps between application sessions for better experience
 
 ### Command Line Interface Design
 **Pattern**: Modern CLI expectations apply to in-game consoles

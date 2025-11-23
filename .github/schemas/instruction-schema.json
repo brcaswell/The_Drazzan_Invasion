@@ -1,0 +1,198 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "AI Instruction File Schema",
+    "description": "Schema for validating AI instruction markdown files with frontmatter",
+    "type": "object",
+    "properties": {
+        "frontmatter": {
+            "type": "object",
+            "properties": {
+                "ai_context": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "copilot-instructions",
+                                "instruction-index",
+                                "tech-specific",
+                                "project-specific",
+                                "workflow-template"
+                            ]
+                        },
+                        "role": {
+                            "type": "string",
+                            "enum": [
+                                "entry-point",
+                                "discovery-hub",
+                                "technology-guide",
+                                "project-context",
+                                "session-structure",
+                                "branch-workflow"
+                            ]
+                        },
+                        "scope": {
+                            "type": "string",
+                            "enum": [
+                                "generic",
+                                "specific",
+                                "meta"
+                            ]
+                        },
+                        "discovery_pattern": {
+                            "type": "string",
+                            "description": "Pattern for AI to discover related files"
+                        },
+                        "categories": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "browser-native",
+                                    "pwa",
+                                    "p2p",
+                                    "javascript",
+                                    "css",
+                                    "html",
+                                    "wasm",
+                                    "testing",
+                                    "documentation",
+                                    "ai-workflow",
+                                    "development-session",
+                                    "git-workflow",
+                                    "feature-development",
+                                    "canvas",
+                                    "webassembly",
+                                    "graphics",
+                                    "performance",
+                                    "multiplayer",
+                                    "webrtc",
+                                    "offline-first",
+                                    "responsive-design",
+                                    "es6",
+                                    "space-shooter",
+                                    "asteroids-like",
+                                    "browser-game"
+                                ]
+                            }
+                        },
+                        "format_version": {
+                            "type": "string",
+                            "pattern": "^\\d+\\.\\d+$"
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "scope",
+                        "format_version"
+                    ],
+                    "additionalProperties": false
+                },
+                "last_updated": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "compatibility": {
+                    "type": "object",
+                    "properties": {
+                        "github_copilot": {
+                            "type": "string"
+                        },
+                        "vscode": {
+                            "type": "string"
+                        },
+                        "cursor": {
+                            "type": "string"
+                        }
+                    },
+                    "additionalProperties": true
+                }
+            },
+            "required": [
+                "ai_context"
+            ],
+            "additionalProperties": true
+        },
+        "content": {
+            "type": "object",
+            "properties": {
+                "ai_sections": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Section name matching @AI-SECTION: [name]"
+                            },
+                            "required": {
+                                "type": "boolean",
+                                "default": false
+                            },
+                            "description": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name"
+                        ]
+                    }
+                },
+                "ai_comments": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "description": "AI context comments like <!-- AI-CONTEXT: type -->"
+                    }
+                }
+            }
+        }
+    },
+    "required": [
+        "frontmatter"
+    ],
+    "definitions": {
+        "common_sections": {
+            "entry_point": [
+                "overview",
+                "technology-stack",
+                "file-structure",
+                "instruction-discovery",
+                "development-environment",
+                "quick-reference"
+            ],
+            "tech_specific": [
+                "conventions",
+                "patterns",
+                "file-types",
+                "best-practices",
+                "anti-patterns"
+            ],
+            "project_specific": [
+                "domain-concepts",
+                "debug-commands",
+                "testing-procedures",
+                "architecture-details"
+            ]
+        }
+    },
+    "examples": [
+        {
+            "description": "Entry point file structure",
+            "frontmatter": {
+                "ai_context": {
+                    "type": "copilot-instructions",
+                    "role": "entry-point",
+                    "scope": "generic",
+                    "discovery_pattern": "instructions/project-specific/[project-name].md",
+                    "categories": [
+                        "browser-native",
+                        "pwa"
+                    ],
+                    "format_version": "2.0"
+                },
+                "last_updated": "2025-11-23"
+            }
+        }
+    ]
+}
