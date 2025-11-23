@@ -16,10 +16,13 @@
 - **Quality enforcement** - Automated frontmatter consistency and content separation rules
 
 ### **Improved Development Experience** 🛠️
-- **Enhanced debug console** with autocomplete and case-sensitive commands
+- **Enhanced debug console** with intelligent autocomplete (Ctrl+Space) and case-sensitive commands
+- **Comprehensive P2P diagnostic tools** - standalone debug interface, signal inspection, connection testing
+- **Cross-platform development scripts** - PowerShell and shell scripts for streamlined P2P testing
 - **Advanced game state inspection** and variable synchronization tools
 - **Feature flag system** for runtime configuration management
-- **Comprehensive documentation** with AI-assisted session templates
+- **Cross-origin bridge** for local P2P testing without HTTPS requirements
+- **Comprehensive troubleshooting documentation** with common solutions and AI-assisted session templates
 
 ### **System Architecture Cleanup** 🏗️
 - **Content separation** between AI instructions vs. human guides
@@ -88,9 +91,10 @@ The_Drazzan_Invasion/
 1. **Prerequisites**: Modern web browser (Chrome, Firefox, Safari, Edge)
 2. **No Build Required**: Open `client/index.html` directly in browser
 3. **Development Server**: Use VS Code Live Server or `npx http-server`
-4. **Testing**: Browser console → `gameIntegration.test()`
-5. **Debug Console**: Press `Ctrl+~` in single-player mode for developer commands
-6. **VS Code Setup**: Use provided launch configurations for direct browser debugging
+4. **Testing**: Browser console → `gameIntegration.test()` or standalone P2P debug tools
+5. **Debug Console**: Press `Ctrl+~` for enhanced debugging with autocomplete (Ctrl+Space)
+6. **P2P Testing**: Open `client/debug-p2p.html` for comprehensive multiplayer diagnostics
+7. **VS Code Setup**: Use provided tasks and launch configurations for streamlined development
 
 ## 🎯 **Game Modes & Implementation Status**
 
@@ -105,14 +109,28 @@ Core infrastructure for P2P multiplayer is complete:
 - **Host Migration**: Framework for automatic failover if host disconnects
 - **State Synchronization**: Architecture for real-time game state across players
 
-### **🔧 Developer Tools & Debugging** (New)
-Enhanced development workflow with comprehensive debugging capabilities:
-- **Debug Console**: In-game console with game progression commands (`Ctrl+~`)
-  - Skip to boss fight, adjust level/score, toggle invincibility
-  - Game state inspection and variable synchronization
-  - Case-sensitive commands with autocomplete support
-- **VS Code Integration**: Launch configurations for direct browser testing
-- **Feature Flag System**: Runtime configuration for enabling/disabling features
+### **🔧 Developer Tools & Debugging** (Enhanced)
+Comprehensive development workflow with extensive debugging and P2P testing capabilities:
+
+#### **Debug Console** (`Ctrl+~`)
+- **Intelligent Autocomplete**: Ctrl+Space with smart matching (prefix > exact > contains)
+- **Modern Terminal UX**: Arrow navigation, syntax highlighting, scrollable suggestions
+- **Game Progression Commands**: Skip to boss, adjust level/score, toggle invincibility
+- **State Inspection**: Game variable synchronization and comprehensive state debugging
+- **Integration**: Works with browser console for complete debugging workflow
+
+#### **P2P Development & Diagnostic Tools**
+- **Standalone Debug Interface**: `client/debug-p2p.html` - Complete P2P testing environment
+- **Signal Inspector**: `client/inspect-signals.js` - localStorage signal analysis and debugging
+- **Connection Diagnostics**: `client/p2p-diagnostics.js` - Network manager and peer connection analysis
+- **Cross-Platform Testing**: PowerShell (.ps1) and shell (.sh) scripts for connection testing
+- **Game Advertisement Tools**: Create and test multiplayer game advertisements
+- **Cross-Origin Bridge**: `client/cross-origin-bridge.html` - Local P2P testing without HTTPS
+
+#### **Development Environment**
+- **VS Code Integration**: Launch configurations and tasks for streamlined development
+- **Feature Flag System**: Runtime configuration for enabling/disabling features  
+- **Troubleshooting Guide**: `docs/development-troubleshooting.md` - Common issues and solutions
 - **Enhanced Game Timer**: Proper pause/resume functionality with formatted display
 
 *Note: Infrastructure is complete, but actual multiplayer gameplay is still in development.*
@@ -133,7 +151,7 @@ Competitive multiplayer features in design phase:
 
 ### **🎮 Current Playable Experience**
 - **Single Player**: ✅ Full game experience available now
-- **Multiplayer Testing**: 🧪 P2P connection testing available via browser console
+- **Multiplayer Testing**: 🧪 Comprehensive P2P diagnostic tools and standalone test interfaces
 - **Game Mode Selection**: 🎨 UI mockups and wireframes implemented
 
 ## 📖 **Documentation**
