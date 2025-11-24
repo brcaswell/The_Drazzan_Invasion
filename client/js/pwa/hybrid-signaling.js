@@ -21,6 +21,38 @@ class HybridSignaling {
         this.initializeSignalingMethods();
     }
 
+    /**
+     * Format message ID for logging with meaningful information
+     * @param {string} messageId - Full message ID in format: peerId-timestamp-random
+     * @returns {string} Formatted string showing peer and relative time
+     */
+    formatMessageIdForLogging(messageId) {
+        if (!messageId) return 'unknown';
+        
+        const parts = messageId.split('-');
+        if (parts.length >= 2) {
+            const peerId = parts[0];
+            const timestamp = parseInt(parts[1]);
+            const now = Date.now();
+            const ageMs = now - timestamp;
+            
+            // Format age in human-readable form
+            let ageStr;
+            if (ageMs < 1000) {
+                ageStr = `${ageMs}ms`;
+            } else if (ageMs < 60000) {
+                ageStr = `${Math.round(ageMs / 1000)}s`;
+            } else {
+                ageStr = `${Math.round(ageMs / 60000)}m`;
+            }
+            
+            return `${peerId}/${ageStr}`;
+        }
+        
+        // Fallback to last 8 chars if format doesn't match expected
+        return messageId.slice(-8);
+    }
+
     initializeSignalingMethods() {
         // Try signaling methods in order of preference
         const methods = [
@@ -367,8 +399,14 @@ class HybridSignaling {
 
         // Process each message
         messages.forEach(message => {
+            // Skip already processed messages (deduplication)
+            if (message.id && this.processedMessages.has(message.id)) {
+                console.log(`[HybridSignaling] Skipping duplicate message from ${source}:`, this.formatMessageIdForLogging(message.id));
+                return;
+            }
+
             console.log(`[HybridSignaling] Processing message from ${source}:`, {
-                id: message.id?.slice(-8),
+                id: this.formatMessageIdForLogging(message.id),
                 type: message.signal?.type || message.type,
                 from: message.sourcePeer,
                 to: message.targetPeer,
@@ -512,14 +550,16 @@ window.inspectHybridSignals = function () {
             from: signal.sourcePeer,
             to: signal.targetPeer,
             timestamp: new Date(signal.timestamp).toLocaleTimeString(),
-            id: signal.id?.slice(-8)
+            id: signaling?.formatMessageIdForLogging?.(signal.id) || signal.id?.slice(-8)
         });
     });
 
     // Check processed messages
     const signaling = window.networkManager?.signalingServer;
     if (signaling?.processedMessages) {
-        console.log('Processed message IDs:', Array.from(signaling.processedMessages).map(id => id.slice(-8)));
+        console.log('Processed message IDs:', Array.from(signaling.processedMessages).map(id => 
+            signaling.formatMessageIdForLogging?.(id) || id.slice(-8)
+        ));
     }
 
     return localStorage_signals;
