@@ -479,6 +479,8 @@ class HybridSignaling {
         const message = {
             id: `${this.peerId}-${Date.now()}-${Math.random()}`,
             type: 'game-advertisement',
+            sourcePeer: this.peerId,
+            targetPeer: null, // Broadcast message
             gameInfo,
             timestamp: Date.now()
         };
@@ -552,6 +554,7 @@ class HybridSignaling {
 // Debug helper functions
 window.inspectHybridSignals = function () {
     const localStorage_signals = JSON.parse(localStorage.getItem('drazzan-p2p-signals') || '[]');
+    const signaling = window.networkManager?.signalingServer;
     console.log('=== Hybrid P2P Signals Debug ===');
     console.log('My Peer ID:', window.networkManager?.peerId);
     console.log('localStorage signals:', localStorage_signals.length);
@@ -566,7 +569,6 @@ window.inspectHybridSignals = function () {
     });
 
     // Check processed messages
-    const signaling = window.networkManager?.signalingServer;
     if (signaling?.processedMessages) {
         console.log('Processed message IDs:', Array.from(signaling.processedMessages).map(id =>
             signaling.formatMessageIdForLogging?.(id) || id.slice(-8)
