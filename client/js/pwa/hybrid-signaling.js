@@ -28,14 +28,14 @@ class HybridSignaling {
      */
     formatMessageIdForLogging(messageId) {
         if (!messageId) return 'unknown';
-        
+
         const parts = messageId.split('-');
         if (parts.length >= 2) {
             const peerId = parts[0];
             const timestamp = parseInt(parts[1]);
             const now = Date.now();
             const ageMs = now - timestamp;
-            
+
             // Format age in human-readable form
             let ageStr;
             if (ageMs < 1000) {
@@ -45,10 +45,10 @@ class HybridSignaling {
             } else {
                 ageStr = `${Math.round(ageMs / 60000)}m`;
             }
-            
+
             return `${peerId}/${ageStr}`;
         }
-        
+
         // Fallback to last 8 chars if format doesn't match expected
         return messageId.slice(-8);
     }
@@ -99,6 +99,17 @@ class HybridSignaling {
     // HTTP-based cross-origin signaling using iframe bridge
     initHTTPCrossOrigin() {
         try {
+            // Cross-origin HTTP signaling only works for localhost development
+            // where we can predict the other port running the same app
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+            if (!isLocalhost) {
+                // For production deployments (GitHub Pages, etc.), cross-origin HTTP doesn't make sense
+                // since we can't predict what other origins would be running the same app
+                console.log('[HybridSignaling] Cross-origin HTTP signaling skipped (only available for localhost development)');
+                return false;
+            }
+
             // Create hidden iframe for cross-origin communication
             this.crossOriginIframe = document.createElement('iframe');
             this.crossOriginIframe.style.display = 'none';
@@ -557,7 +568,7 @@ window.inspectHybridSignals = function () {
     // Check processed messages
     const signaling = window.networkManager?.signalingServer;
     if (signaling?.processedMessages) {
-        console.log('Processed message IDs:', Array.from(signaling.processedMessages).map(id => 
+        console.log('Processed message IDs:', Array.from(signaling.processedMessages).map(id =>
             signaling.formatMessageIdForLogging?.(id) || id.slice(-8)
         ));
     }
