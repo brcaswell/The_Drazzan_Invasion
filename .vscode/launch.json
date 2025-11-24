@@ -70,6 +70,29 @@
             "internalConsoleOptions": "openOnSessionStart"
         },
         {
+            "name": "🔗 P2P Host - Clean Connection",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:8080",
+            "webRoot": "${workspaceFolder}/client",
+            "preLaunchTask": "🐳 Start P2P Development Environment",
+            "runtimeArgs": [
+                "--enable-webrtc-capture-all-screens"
+            ],
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "🤝 P2P Peer - Clean Connection",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:8081",
+            "webRoot": "${workspaceFolder}/client",
+            "runtimeArgs": [
+                "--enable-webrtc-capture-all-screens"
+            ],
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
             "name": "🧪 Test WebAssembly WASM",
             "type": "chrome",
             "request": "launch",

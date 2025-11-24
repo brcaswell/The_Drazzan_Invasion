@@ -100,11 +100,19 @@ All file references in `client/index.html` were updated to reflect the new direc
 
 ## Future Development
 
-This reorganization prepares the project for:
-- Server-side game logic implementation
-- Multiplayer functionality
-- Real-time communication between clients
-- Centralized game state management
+### Architecture Improvements (Priority)
+This project is evolving toward better separation of concerns:
+- **Network Manager Decoupling**: Extract game-specific logic from P2P networking layer
+- **Plugin Architecture**: Implement `IGameEngine` interface for reusable components  
+- **Event-Driven Design**: Decouple network and game layers through event system
+- **Generic P2P Framework**: Make networking components reusable for other games
+
+### Multiplayer Enhancements
+Current P2P foundation enables:
+- **Decentralized Game Logic**: Host-authoritative with peer validation
+- **Real-time State Synchronization**: Low-latency game state updates
+- **Cross-Platform Compatibility**: WebRTC works across all modern browsers
+- **Scalable Architecture**: No central servers required for any game size
 
 ## Documentation Files
 

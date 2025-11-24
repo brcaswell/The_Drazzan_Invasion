@@ -283,11 +283,15 @@ console.log('Debug Info:', debugInfo);
 ## Future Roadmap
 
 ### Planned Enhancements
-1. **WebAssembly Optimizations**: Full AssemblyScript implementation
-2. **Advanced AI**: Machine learning-powered enemy behavior
-3. **Blockchain Integration**: NFT assets and achievements
-4. **Cross-game Protocol**: Interoperability with other P2P games
-5. **Mobile Native Apps**: React Native wrapper for iOS/Android
+1. **Architecture Refactoring**: Decouple network manager from game-specific logic
+   - Implement generic `IGameEngine` interface
+   - Create reusable P2P networking components
+   - Enable plugin-based game engine architecture
+2. **WebAssembly Optimizations**: Full AssemblyScript implementation
+3. **Advanced AI**: Machine learning-powered enemy behavior
+4. **Blockchain Integration**: NFT assets and achievements
+5. **Cross-game Protocol**: Interoperability with other P2P games
+6. **Mobile Native Apps**: React Native wrapper for iOS/Android
 
 ### Community Features
 - **Mod Support**: Custom game modes and assets
@@ -305,6 +309,8 @@ console.log('Debug Info:', debugInfo);
 5. Submit pull request with detailed description
 
 ### Architecture Principles
+- **Separation of concerns**: Network layer independent of game logic
+- **Plugin architecture**: Swappable game engines and components
 - **Offline-first**: All features work without internet
 - **Progressive enhancement**: Graceful degradation on older browsers
 - **Privacy-preserving**: No central data collection
