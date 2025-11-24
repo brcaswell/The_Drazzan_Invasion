@@ -545,7 +545,7 @@ class GameModeUI {
         `;
 
         this.updatePlayerList(this.manager.getActivePlayers());
-        
+
         // Set up periodic player list refresh for real-time updates
         if (this.playerListRefreshInterval) {
             clearInterval(this.playerListRefreshInterval);
@@ -555,7 +555,7 @@ class GameModeUI {
                 this.updatePlayerList(this.manager.getActivePlayers());
             }
         }, 1000); // Refresh every second
-        
+
         this.show();
     }
 
@@ -749,7 +749,7 @@ class GameModeUI {
             this.manager.networkManager.onConnectionResult = (success, message) => {
                 if (success) {
                     this.updateConnectionStatus(statusElement, 'success', 'Connected successfully!');
-                    
+
                     // Set up game session for joined game
                     this.manager.gameSession = {
                         gameCode: gameCode,
@@ -757,11 +757,11 @@ class GameModeUI {
                         startTime: null,
                         players: new Map()
                     };
-                    
+
                     // Set mode and show lobby
                     this.manager.setMode('coop'); // Default to coop for joined games
                     this.manager.gameState = 'lobby';
-                    
+
                     setTimeout(() => {
                         joinForm.remove();
                         this.manager.showLobby(); // Show the lobby after successful join
@@ -871,7 +871,7 @@ class GameModeUI {
     hide() {
         this.elements.container.classList.add('hidden');
         this.clearCountdown();
-        
+
         // Clean up player list refresh interval
         if (this.playerListRefreshInterval) {
             clearInterval(this.playerListRefreshInterval);

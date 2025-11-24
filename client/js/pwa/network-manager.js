@@ -705,7 +705,7 @@ class NetworkManager {
                     name: 'Host',
                     isHost: true
                 });
-                
+
                 // Add ourselves to the game mode manager
                 window.gameModeManager.addPlayer(this.peerId, {
                     name: 'Player',
