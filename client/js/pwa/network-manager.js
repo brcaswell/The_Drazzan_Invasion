@@ -303,7 +303,7 @@ class NetworkManager {
                         this.onConnectionResult(false, 'Connection timeout - host may not be responding');
                     }
                     reject(new Error('Join process timed out - host may not be responding'));
-                }, 15000); // 15 second timeout for entire join process
+                }, 25000); // Increased from 15s to 25s to accommodate 8 retry attempts with longer delays
 
                 // Store resolve/reject for join response handler
                 this.pendingJoinResolve = (peerId) => {
@@ -316,7 +316,7 @@ class NetworkManager {
                 };
 
                 let joinRequestAttempts = 0;
-                const maxJoinAttempts = 5;
+                const maxJoinAttempts = 8; // Increased from 5 to 8 attempts
 
                 const checkConnection = () => {
                     const connection = this.connections.get(hostPeerId);
@@ -340,7 +340,7 @@ class NetworkManager {
                         // Check if data channel is actually ready before sending
                         const dataChannel = this.dataChannels.get(hostPeerId);
                         if (!dataChannel || dataChannel.readyState !== 'open') {
-                            console.log(`[P2P] Data channel not ready (${dataChannel?.readyState}), retrying...`);
+                            console.log(`[P2P] Data channel not ready (${dataChannel?.readyState}), retrying in 2s...`);
 
                             if (joinRequestAttempts >= maxJoinAttempts) {
                                 clearTimeout(timeout);
@@ -358,7 +358,7 @@ class NetworkManager {
                                 this.onConnectionResult(null, `Waiting for data channel... (${joinRequestAttempts}/${maxJoinAttempts})`);
                             }
 
-                            setTimeout(checkConnection, 1000); // Retry after 1s
+                            setTimeout(checkConnection, 2000); // Increased delay from 1s to 2s
                             return;
                         }
 
@@ -387,7 +387,7 @@ class NetworkManager {
                                 this.onConnectionResult(null, `Retrying connection... (${joinRequestAttempts}/${maxJoinAttempts})`);
                             }
 
-                            setTimeout(checkConnection, 1000); // Retry after 1s
+                            setTimeout(checkConnection, 2500); // Increased delay from 1s to 2.5s
                             return;
                         }
 
@@ -402,7 +402,8 @@ class NetworkManager {
                         }
                         reject(new Error('Connection failed'));
                     } else {
-                        setTimeout(checkConnection, 100);
+                        // Connection not yet established, wait longer before retrying
+                        setTimeout(checkConnection, 500); // Increased from 100ms to 500ms
                     }
                 };
 
@@ -488,6 +489,8 @@ class NetworkManager {
 
         dataChannel.onclose = () => {
             console.log('[P2P] Data channel closed with', peerId);
+            // Clean up the peer connection when data channel closes
+            this.removePeer(peerId);
         };
 
         dataChannel.onmessage = (event) => {
@@ -501,6 +504,13 @@ class NetworkManager {
 
         dataChannel.onerror = (error) => {
             console.error('[P2P] Data channel error with', peerId, ':', error);
+
+            // Handle "Receiving end does not exist" and other critical errors
+            if (error.message && (error.message.includes('Receiving end does not exist') ||
+                error.message.includes('DataChannel is closed'))) {
+                console.log('[P2P] Critical data channel error, cleaning up peer:', peerId);
+                this.removePeer(peerId);
+            }
         };
     }
 
@@ -871,7 +881,23 @@ class NetworkManager {
     sendToPlayer(peerId, message) {
         const dataChannel = this.dataChannels.get(peerId);
         if (dataChannel && dataChannel.readyState === 'open') {
-            dataChannel.send(JSON.stringify(message));
+            try {
+                dataChannel.send(JSON.stringify(message));
+            } catch (error) {
+                // Handle "Receiving end does not exist" and other data channel errors
+                console.warn(`[P2P] Failed to send message to ${peerId}:`, error.message);
+
+                // If the channel failed, mark it for cleanup
+                if (error.message.includes('Receiving end does not exist') ||
+                    error.message.includes('DataChannel is closed') ||
+                    dataChannel.readyState !== 'open') {
+                    console.log(`[P2P] Marking peer ${peerId} for cleanup due to send failure`);
+                    // Remove the peer connection
+                    this.removePeer(peerId);
+                }
+
+                throw new Error(`Message send failed: ${error.message}`);
+            }
         } else {
             const error = `Cannot send to player ${peerId} - channel not ready (state: ${dataChannel?.readyState || 'missing'})`;
             console.warn('[P2P]', error);
@@ -881,11 +907,30 @@ class NetworkManager {
 
     broadcast(message, excludePeerId = null) {
         const messageStr = JSON.stringify(message);
+        const peersToRemove = [];
 
         for (const [peerId, dataChannel] of this.dataChannels) {
             if (peerId !== excludePeerId && dataChannel.readyState === 'open') {
-                dataChannel.send(messageStr);
+                try {
+                    dataChannel.send(messageStr);
+                } catch (error) {
+                    // Handle "Receiving end does not exist" and other data channel errors
+                    console.warn(`[P2P] Failed to broadcast to ${peerId}:`, error.message);
+
+                    // Mark peer for removal if critical error
+                    if (error.message.includes('Receiving end does not exist') ||
+                        error.message.includes('DataChannel is closed') ||
+                        dataChannel.readyState !== 'open') {
+                        console.log(`[P2P] Marking peer ${peerId} for cleanup due to broadcast failure`);
+                        peersToRemove.push(peerId);
+                    }
+                }
             }
+        }
+
+        // Clean up failed peers after iteration to avoid modifying collection during iteration
+        for (const peerId of peersToRemove) {
+            this.removePeer(peerId);
         }
     }
 
