@@ -504,10 +504,10 @@ class NetworkManager {
 
         dataChannel.onerror = (error) => {
             console.error('[P2P] Data channel error with', peerId, ':', error);
-            
+
             // Handle "Receiving end does not exist" and other critical errors
-            if (error.message && (error.message.includes('Receiving end does not exist') || 
-                                error.message.includes('DataChannel is closed'))) {
+            if (error.message && (error.message.includes('Receiving end does not exist') ||
+                error.message.includes('DataChannel is closed'))) {
                 console.log('[P2P] Critical data channel error, cleaning up peer:', peerId);
                 this.removePeer(peerId);
             }
@@ -886,16 +886,16 @@ class NetworkManager {
             } catch (error) {
                 // Handle "Receiving end does not exist" and other data channel errors
                 console.warn(`[P2P] Failed to send message to ${peerId}:`, error.message);
-                
+
                 // If the channel failed, mark it for cleanup
-                if (error.message.includes('Receiving end does not exist') || 
+                if (error.message.includes('Receiving end does not exist') ||
                     error.message.includes('DataChannel is closed') ||
                     dataChannel.readyState !== 'open') {
                     console.log(`[P2P] Marking peer ${peerId} for cleanup due to send failure`);
                     // Remove the peer connection
                     this.removePeer(peerId);
                 }
-                
+
                 throw new Error(`Message send failed: ${error.message}`);
             }
         } else {
@@ -916,9 +916,9 @@ class NetworkManager {
                 } catch (error) {
                     // Handle "Receiving end does not exist" and other data channel errors
                     console.warn(`[P2P] Failed to broadcast to ${peerId}:`, error.message);
-                    
+
                     // Mark peer for removal if critical error
-                    if (error.message.includes('Receiving end does not exist') || 
+                    if (error.message.includes('Receiving end does not exist') ||
                         error.message.includes('DataChannel is closed') ||
                         dataChannel.readyState !== 'open') {
                         console.log(`[P2P] Marking peer ${peerId} for cleanup due to broadcast failure`);
