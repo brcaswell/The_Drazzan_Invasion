@@ -638,6 +638,14 @@ class NetworkManager {
                 joinedAt: Date.now(),
                 status: 'connected'
             });
+
+            // Notify game mode manager if available
+            if (window.gameModeManager) {
+                window.gameModeManager.addPlayer(fromPeerId, {
+                    name: `Player ${this.connectedPlayers.size + 1}`,
+                    isHost: false
+                });
+            }
         }
 
         // Send response
@@ -689,6 +697,21 @@ class NetworkManager {
         if (message.success) {
             console.log('[P2P] Successfully joined game!');
             console.log('[P2P] Game state:', message.gameState);
+
+            // Notify game mode manager if available
+            if (window.gameModeManager) {
+                // Add the host player to the game mode manager
+                window.gameModeManager.addPlayer(fromPeerId, {
+                    name: 'Host',
+                    isHost: true
+                });
+                
+                // Add ourselves to the game mode manager
+                window.gameModeManager.addPlayer(this.peerId, {
+                    name: 'Player',
+                    isHost: false
+                });
+            }
 
             // Notify connection completion
             if (this.pendingJoinResolve) {

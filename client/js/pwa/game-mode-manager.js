@@ -203,6 +203,12 @@ class GameModeManager {
                     players: new Map()
                 };
 
+                // Add host player to the lobby
+                this.addPlayer(this.networkManager.peerId, {
+                    name: 'Host (You)',
+                    isHost: true
+                });
+
                 console.log('[GameMode] Game session created:', this.gameSession);
                 console.log('[GameMode] About to show lobby...');
                 this.showLobby();
