@@ -266,6 +266,9 @@ class NetworkManager {
                 const timeout = setTimeout(() => {
                     this.pendingJoinResolve = null;
                     this.pendingJoinReject = null;
+                    if (this.onConnectionResult) {
+                        this.onConnectionResult(false, 'Connection timeout - please try again');
+                    }
                     reject(new Error('Connection timeout'));
                 }, 15000); // Increased timeout for join process
 
@@ -279,30 +282,66 @@ class NetworkManager {
                     reject(error);
                 };
 
+                let joinRequestAttempts = 0;
+                const maxJoinAttempts = 5;
+
                 const checkConnection = () => {
                     const connection = this.connections.get(hostPeerId);
                     const dataChannel = this.dataChannels.get(hostPeerId);
-                    
-                    console.log('[P2P] Connection check - PC state:', connection?.connectionState, 'DC state:', dataChannel?.readyState);
-                    
-                    // Check if both peer connection and data channel are ready
-                    if (connection && dataChannel && 
+
+                    console.log('[P2P] Connection check - PC state:', connection?.connectionState, 'DC state:', dataChannel?.readyState, 'ICE state:', connection?.iceConnectionState);
+
+                    // Check if peer connection is viable and we have a data channel
+                    if (connection && dataChannel &&
                         (connection.connectionState === 'connected' || connection.connectionState === 'connecting') &&
-                        dataChannel.readyState === 'open') {
+                        (dataChannel.readyState === 'open' || dataChannel.readyState === 'connecting')) {
+
+                        joinRequestAttempts++;
+                        console.log(`[P2P] Connection viable, attempting join request (${joinRequestAttempts}/${maxJoinAttempts})...`);
                         
-                        // Send join request - response will be handled by handleJoinResponse
-                        console.log('[P2P] Connection ready, sending join request...');
-                        this.sendToPlayer(hostPeerId, {
-                            type: 'join_request',
-                            playerId: this.peerId
-                        });
+                        // Update UI with retry status
+                        if (this.onConnectionResult && joinRequestAttempts > 1) {
+                            this.onConnectionResult(null, `Connecting... (attempt ${joinRequestAttempts}/${maxJoinAttempts})`);
+                        }
                         
+                        try {
+                            this.sendToPlayer(hostPeerId, {
+                                type: 'join_request',
+                                playerId: this.peerId
+                            });
+                            console.log('[P2P] Join request sent successfully');
+                        } catch (error) {
+                            console.log(`[P2P] Failed to send join request (attempt ${joinRequestAttempts}):`, error.message);
+                            
+                            if (joinRequestAttempts >= maxJoinAttempts) {
+                                clearTimeout(timeout);
+                                this.pendingJoinResolve = null;
+                                this.pendingJoinReject = null;
+                                if (this.onConnectionResult) {
+                                    this.onConnectionResult(false, 'Failed to send join request after multiple attempts');
+                                }
+                                reject(new Error('Failed to send join request after multiple attempts'));
+                                return;
+                            }
+                            
+                            // Update UI with retry info
+                            if (this.onConnectionResult) {
+                                this.onConnectionResult(null, `Retrying connection... (${joinRequestAttempts}/${maxJoinAttempts})`);
+                            }
+                            
+                            setTimeout(checkConnection, 1000); // Retry after 1s
+                            return;
+                        }
+
                         // Don't resolve yet - wait for join_response
                         return;
                     } else if (connection && (connection.connectionState === 'failed' || connection.connectionState === 'disconnected')) {
                         clearTimeout(timeout);
                         this.pendingJoinResolve = null;
                         this.pendingJoinReject = null;
+                        if (this.onConnectionResult) {
+                            this.onConnectionResult(false, 'Connection failed');
+                        }
                         reject(new Error('Connection failed'));
                     } else {
                         setTimeout(checkConnection, 100);
@@ -525,30 +564,30 @@ class NetworkManager {
 
     handleJoinResponse(message, fromPeerId) {
         console.log('[P2P] Join response from host:', message.success);
-        
+
         if (message.success) {
             console.log('[P2P] Successfully joined game!');
             console.log('[P2P] Game state:', message.gameState);
-            
+
             // Notify connection completion
             if (this.pendingJoinResolve) {
                 this.pendingJoinResolve(fromPeerId);
                 this.pendingJoinResolve = null;
             }
-            
+
             // Notify UI of successful join
             if (this.onConnectionResult) {
                 this.onConnectionResult(true, 'Joined game successfully');
             }
         } else {
             console.log('[P2P] Join request rejected');
-            
+
             // Notify connection failure
             if (this.pendingJoinReject) {
                 this.pendingJoinReject(new Error('Join request rejected'));
                 this.pendingJoinReject = null;
             }
-            
+
             // Notify UI of failure
             if (this.onConnectionResult) {
                 this.onConnectionResult(false, 'Join request rejected');
