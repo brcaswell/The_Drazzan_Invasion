@@ -329,6 +329,22 @@ The game includes a developer debug console for testing and cheats:
 - **AI-Assisted Workflows**: Structured templates and patterns for consistent development
 - **Comprehensive Documentation**: Architecture guides, deployment instructions, and troubleshooting
 
+## 🔮 **Future Development**
+
+### **Immediate Architecture Improvements**
+- **Network Manager Decoupling**: Separate P2P networking from Drazzan-specific game logic
+  - Generic `IGameEngine` interface for reusable components
+  - Plugin-based architecture for different game types
+  - Event-driven communication between network and game layers
+
+### **Planned Features** 
+- **Enhanced Multiplayer**: Advanced game modes and tournament systems
+- **Cross-Platform Mobile**: Native mobile app development
+- **Community Tools**: Mod support, replay system, and social features
+- **Performance Optimization**: Full WebAssembly implementation
+
+*See detailed roadmap in [Project Completion Summary](docs/PROJECT-COMPLETION-SUMMARY.md)*
+
 ## 📜 **License**
 
 This project is open source. See LICENSE file for details.

@@ -174,6 +174,10 @@ The_Drazzan_Invasion/
 ## 🔮 Future Roadmap
 
 ### Immediate Enhancements
+- **Network Manager Decoupling**: Separate P2P networking from game-specific logic
+  - Create `IGameEngine` interface for pluggable game logic
+  - Extract Drazzan-specific mechanics to `DrazzanGameEngine`
+  - Implement event-driven architecture for network/game communication
 - **Full AssemblyScript Implementation**: Optimize WASM modules for maximum performance
 - **Enhanced Mobile Support**: Touch controls and mobile-specific optimizations
 - **Advanced AI**: Machine learning-powered enemy behavior

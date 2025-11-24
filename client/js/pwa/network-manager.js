@@ -12,6 +12,33 @@ class NetworkManager {
         // Game code to peer ID mapping
         this.gameCodeMap = new Map(); // gameCode -> hostPeerId
 
+        // Host-side player management (for P2P-only mode)
+        this.connectedPlayers = new Map(); // peerId -> playerInfo
+        this.maxPlayers = 4;
+
+        // TODO: DECOUPLE GAME LOGIC FROM NETWORK MANAGER
+        // This should be moved to a separate GameEngine class that implements
+        // a generic IGameEngine interface. The network manager should only
+        // handle P2P connections and delegate game logic to the engine.
+        // 
+        // Future architecture:
+        // - NetworkManager: Pure P2P connection handling
+        // - IGameEngine: Generic game state management interface  
+        // - DrazzanGameEngine: Drazzan-specific game logic
+        // - Event system: Decoupled communication between layers
+
+        // P2P-only game state (TEMPORARY - should be moved to GameEngine)
+        this.gameSimulation = {
+            players: new Map(),
+            projectiles: [],
+            enemies: [],
+            gameTime: 0,
+            lastUpdate: Date.now()
+        };
+
+        // Game engine abstraction (for future decoupling)
+        this.gameEngine = null;
+
         // Connection result callback for UI feedback
         this.onConnectionResult = null;        // WebRTC configuration
         this.rtcConfig = {
@@ -264,13 +291,19 @@ class NetworkManager {
             // Wait for connection to be established and join to be accepted
             const result = await new Promise((resolve, reject) => {
                 const timeout = setTimeout(() => {
-                    this.pendingJoinResolve = null;
-                    this.pendingJoinReject = null;
-                    if (this.onConnectionResult) {
-                        this.onConnectionResult(false, 'Connection timeout - please try again');
+                    console.log('[P2P] Join process timed out after 15 seconds');
+                    // Clear pending callbacks to prevent memory leaks
+                    if (this.pendingJoinResolve) {
+                        this.pendingJoinResolve = null;
                     }
-                    reject(new Error('Connection timeout'));
-                }, 15000); // Increased timeout for join process
+                    if (this.pendingJoinReject) {
+                        this.pendingJoinReject = null;
+                    }
+                    if (this.onConnectionResult) {
+                        this.onConnectionResult(false, 'Connection timeout - host may not be responding');
+                    }
+                    reject(new Error('Join process timed out - host may not be responding'));
+                }, 15000); // 15 second timeout for entire join process
 
                 // Store resolve/reject for join response handler
                 this.pendingJoinResolve = (peerId) => {
@@ -298,12 +331,37 @@ class NetworkManager {
 
                         joinRequestAttempts++;
                         console.log(`[P2P] Connection viable, attempting join request (${joinRequestAttempts}/${maxJoinAttempts})...`);
-                        
+
                         // Update UI with retry status
                         if (this.onConnectionResult && joinRequestAttempts > 1) {
                             this.onConnectionResult(null, `Connecting... (attempt ${joinRequestAttempts}/${maxJoinAttempts})`);
                         }
-                        
+
+                        // Check if data channel is actually ready before sending
+                        const dataChannel = this.dataChannels.get(hostPeerId);
+                        if (!dataChannel || dataChannel.readyState !== 'open') {
+                            console.log(`[P2P] Data channel not ready (${dataChannel?.readyState}), retrying...`);
+
+                            if (joinRequestAttempts >= maxJoinAttempts) {
+                                clearTimeout(timeout);
+                                this.pendingJoinResolve = null;
+                                this.pendingJoinReject = null;
+                                if (this.onConnectionResult) {
+                                    this.onConnectionResult(false, 'Data channel failed to open after multiple attempts');
+                                }
+                                reject(new Error('Data channel failed to open after multiple attempts'));
+                                return;
+                            }
+
+                            // Update UI with retry info
+                            if (this.onConnectionResult) {
+                                this.onConnectionResult(null, `Waiting for data channel... (${joinRequestAttempts}/${maxJoinAttempts})`);
+                            }
+
+                            setTimeout(checkConnection, 1000); // Retry after 1s
+                            return;
+                        }
+
                         try {
                             this.sendToPlayer(hostPeerId, {
                                 type: 'join_request',
@@ -312,7 +370,7 @@ class NetworkManager {
                             console.log('[P2P] Join request sent successfully');
                         } catch (error) {
                             console.log(`[P2P] Failed to send join request (attempt ${joinRequestAttempts}):`, error.message);
-                            
+
                             if (joinRequestAttempts >= maxJoinAttempts) {
                                 clearTimeout(timeout);
                                 this.pendingJoinResolve = null;
@@ -323,12 +381,12 @@ class NetworkManager {
                                 reject(new Error('Failed to send join request after multiple attempts'));
                                 return;
                             }
-                            
+
                             // Update UI with retry info
                             if (this.onConnectionResult) {
                                 this.onConnectionResult(null, `Retrying connection... (${joinRequestAttempts}/${maxJoinAttempts})`);
                             }
-                            
+
                             setTimeout(checkConnection, 1000); // Retry after 1s
                             return;
                         }
@@ -550,20 +608,73 @@ class NetworkManager {
     }
 
     handleJoinRequest(message, fromPeerId) {
-        if (this.isHost && this.localGameServer) {
-            const success = this.localGameServer.joinGame(0, fromPeerId); // Assuming single game
-            console.log('[P2P] Join request from', fromPeerId, '- Success:', success);
+        console.log('[P2P] Received join request from', fromPeerId);
 
+        if (!this.isHost) {
+            console.log('[P2P] Ignoring join request - not a host');
+            return;
+        }
+
+        // Check if we have room for more players
+        const currentPlayerCount = this.connectedPlayers.size + 1; // +1 for host
+        const canJoin = currentPlayerCount < this.maxPlayers;
+
+        console.log('[P2P] Join request from', fromPeerId, '- Can join:', canJoin, '(', currentPlayerCount, '/', this.maxPlayers, 'players)');
+
+        if (canJoin) {
+            // Add player to our connected players list
+            this.connectedPlayers.set(fromPeerId, {
+                peerId: fromPeerId,
+                joinedAt: Date.now(),
+                status: 'connected'
+            });
+        }
+
+        // Send response
+        try {
             this.sendToPlayer(fromPeerId, {
                 type: 'join_response',
-                success: success,
-                gameState: success ? this.localGameServer.getGameState() : null
+                success: canJoin,
+                reason: canJoin ? 'Welcome to the game!' : 'Game is full',
+                gameState: canJoin ? this.getSimpleGameState() : null
             });
+
+            if (canJoin) {
+                console.log('[P2P] Player', fromPeerId, 'successfully joined. Total players:', this.connectedPlayers.size + 1);
+            } else {
+                console.log('[P2P] Rejected player', fromPeerId, '- game is full');
+            }
+        } catch (error) {
+            console.error('[P2P] Failed to send join response to', fromPeerId, ':', error);
         }
     }
 
+    // Get simple game state for P2P-only mode (no WASM dependency)
+    getSimpleGameState() {
+        return {
+            gameType: 'drazzan-invasion',
+            hostId: this.peerId,
+            connectedPlayers: Array.from(this.connectedPlayers.keys()),
+            maxPlayers: this.maxPlayers,
+            gameCode: this.gameCode,
+            timestamp: Date.now()
+        };
+    }
+
+    // Get current P2P game simulation state
+    getGameSimulationState() {
+        if (!this.isHost) return null;
+
+        return {
+            gameTime: this.gameSimulation.gameTime,
+            players: Object.fromEntries(this.gameSimulation.players),
+            projectiles: this.gameSimulation.projectiles.slice(), // Copy array
+            connectedCount: this.connectedPlayers.size + 1 // +1 for host
+        };
+    }
+
     handleJoinResponse(message, fromPeerId) {
-        console.log('[P2P] Join response from host:', message.success);
+        console.log('[P2P] Join response from host:', message.success, message.reason || '');
 
         if (message.success) {
             console.log('[P2P] Successfully joined game!');
@@ -596,22 +707,104 @@ class NetworkManager {
     }
 
     handlePlayerUpdate(message, fromPeerId) {
-        if (this.isHost && this.localGameServer) {
-            this.localGameServer.updatePlayer(
-                fromPeerId,
-                message.x, message.y,
-                message.health, message.score
-            );
+        // TODO: DECOUPLE - This should delegate to this.gameEngine.handlePlayerUpdate()
+        // For now, using direct game logic until refactor is complete
+
+        // Always handle player updates in P2P mode (WASM-free)
+        if (this.isHost) {
+            // Update player in our game simulation
+            let player = this.gameSimulation.players.get(fromPeerId);
+            if (!player) {
+                player = {
+                    id: fromPeerId,
+                    x: message.x || 400,
+                    y: message.y || 300,
+                    health: message.health || 100,
+                    score: message.score || 0,
+                    lastUpdate: Date.now()
+                };
+                this.gameSimulation.players.set(fromPeerId, player);
+            } else {
+                // Update existing player
+                if (typeof message.x === 'number') player.x = message.x;
+                if (typeof message.y === 'number') player.y = message.y;
+                if (typeof message.health === 'number') player.health = message.health;
+                if (typeof message.score === 'number') player.score = message.score;
+                player.lastUpdate = Date.now();
+            }
+
+            console.log('[P2P] Updated player', fromPeerId, 'position:', player.x, player.y, 'health:', player.health);
+
+            // Relay update to other players
+            this.broadcast({
+                type: 'player_update',
+                playerId: fromPeerId,
+                x: player.x,
+                y: player.y,
+                health: player.health,
+                score: player.score
+            }, fromPeerId);
+        }
+
+        // Also handle locally for non-host peers
+        if (window.gameInstance && window.gameInstance.updateNetworkPlayer) {
+            window.gameInstance.updateNetworkPlayer(fromPeerId, message);
         }
     }
 
     handleGameAction(message, fromPeerId) {
-        if (this.isHost && this.localGameServer) {
-            this.localGameServer.handlePlayerAction(
-                fromPeerId,
-                message.action,
-                message.data
-            );
+        // TODO: DECOUPLE - This should delegate to this.gameEngine.handleGameAction()
+        // Game-specific actions (shoot, damage, score) should not be in network layer
+
+        console.log('[P2P] Game action from', fromPeerId, ':', message.action, message.data);
+
+        // Process game action in P2P mode (TEMPORARY - should be in GameEngine)
+        if (this.isHost) {
+            const player = this.gameSimulation.players.get(fromPeerId);
+            if (!player) {
+                console.warn('[P2P] Action from unknown player:', fromPeerId);
+                return;
+            }
+
+            // Handle different action types
+            switch (message.action) {
+                case 'move':
+                    if (message.data.x !== undefined) player.x = Math.max(0, Math.min(800, message.data.x));
+                    if (message.data.y !== undefined) player.y = Math.max(0, Math.min(600, message.data.y));
+                    break;
+
+                case 'shoot':
+                    // Add projectile to game state
+                    this.gameSimulation.projectiles.push({
+                        id: `${fromPeerId}_${Date.now()}`,
+                        playerId: fromPeerId,
+                        x: message.data.x || player.x,
+                        y: message.data.y || player.y,
+                        vx: message.data.vx || 0,
+                        vy: message.data.vy || -300,
+                        damage: message.data.damage || 25,
+                        createdAt: Date.now()
+                    });
+                    console.log('[P2P] Added projectile from player', fromPeerId);
+                    break;
+
+                case 'damage':
+                    player.health = Math.max(0, player.health - (message.data.damage || 10));
+                    if (player.health <= 0) {
+                        console.log('[P2P] Player', fromPeerId, 'destroyed');
+                    }
+                    break;
+
+                case 'score':
+                    player.score += (message.data.points || 0);
+                    console.log('[P2P] Player', fromPeerId, 'scored', message.data.points, 'points. Total:', player.score);
+                    break;
+
+                default:
+                    console.log('[P2P] Unknown action:', message.action);
+            }
+
+            player.lastUpdate = Date.now();
         }
 
         // Relay to other players if host
@@ -622,6 +815,11 @@ class NetworkManager {
                 action: message.action,
                 data: message.data
             }, fromPeerId);
+        }
+
+        // Also notify local game instance
+        if (window.gameInstance && window.gameInstance.handleNetworkAction) {
+            window.gameInstance.handleNetworkAction(fromPeerId, message.action, message.data);
         }
     }
 
@@ -675,7 +873,9 @@ class NetworkManager {
         if (dataChannel && dataChannel.readyState === 'open') {
             dataChannel.send(JSON.stringify(message));
         } else {
-            console.warn('[P2P] Cannot send to player', peerId, '- channel not ready');
+            const error = `Cannot send to player ${peerId} - channel not ready (state: ${dataChannel?.readyState || 'missing'})`;
+            console.warn('[P2P]', error);
+            throw new Error(error);
         }
     }
 
@@ -691,6 +891,8 @@ class NetworkManager {
 
     // Utility methods
     removePeer(peerId) {
+        console.log('[P2P] Removing peer:', peerId);
+
         const pc = this.connections.get(peerId);
         if (pc) {
             pc.close();
@@ -699,13 +901,28 @@ class NetworkManager {
 
         this.dataChannels.delete(peerId);
 
+        // Remove from connected players list if we're the host
+        if (this.isHost && this.connectedPlayers.has(peerId)) {
+            this.connectedPlayers.delete(peerId);
+            console.log('[P2P] Player', peerId, 'removed from game. Remaining players:', this.connectedPlayers.size + 1);
+
+            // Remove from game simulation
+            if (this.gameSimulation.players.has(peerId)) {
+                this.gameSimulation.players.delete(peerId);
+                console.log('[P2P] Removed player', peerId, 'from game simulation');
+            }
+
+            // Remove their projectiles
+            this.gameSimulation.projectiles = this.gameSimulation.projectiles.filter(
+                proj => proj.playerId !== peerId
+            );
+        }
+
         // Notify game of player disconnect
         if (window.gameInstance && window.gameInstance.handlePlayerDisconnect) {
             window.gameInstance.handlePlayerDisconnect(peerId);
         }
-    }
-
-    getConnectedPeers() {
+    } getConnectedPeers() {
         const peers = [];
         for (const [peerId, pc] of this.connections) {
             if (pc.connectionState === 'connected') {
@@ -724,26 +941,184 @@ class NetworkManager {
         this.connections.clear();
         this.dataChannels.clear();
 
+        // Clear game simulation data
+        if (this.isHost) {
+            this.gameSimulation.players.clear();
+            this.gameSimulation.projectiles = [];
+            this.connectedPlayers.clear();
+        }
+
         // Disconnect from signaling
         if (this.signalingServer && this.signalingServer.disconnect) {
             this.signalingServer.disconnect();
         }
     }
 
+    // Helper methods for game integration
+
+    // Send player position update to host
+    sendPlayerUpdate(x, y, health, score) {
+        if (this.isHost) {
+            // Update own player data
+            const hostPlayer = this.gameSimulation.players.get(this.peerId) || {};
+            hostPlayer.x = x;
+            hostPlayer.y = y;
+            hostPlayer.health = health;
+            hostPlayer.score = score;
+            hostPlayer.lastUpdate = Date.now();
+            this.gameSimulation.players.set(this.peerId, hostPlayer);
+        } else {
+            // Send to host
+            const hostPeerId = this.getHostPeerId();
+            if (hostPeerId) {
+                try {
+                    this.sendToPlayer(hostPeerId, {
+                        type: 'player_update',
+                        x: x,
+                        y: y,
+                        health: health,
+                        score: score
+                    });
+                } catch (error) {
+                    console.warn('[P2P] Failed to send player update:', error.message);
+                }
+            }
+        }
+    }
+
+    // Send game action to host
+    sendGameAction(action, data) {
+        if (this.isHost) {
+            // Process own action
+            this.handleGameAction({ action, data }, this.peerId);
+        } else {
+            const hostPeerId = this.getHostPeerId();
+            if (hostPeerId) {
+                try {
+                    this.sendToPlayer(hostPeerId, {
+                        type: 'game_action',
+                        action: action,
+                        data: data
+                    });
+                } catch (error) {
+                    console.warn('[P2P] Failed to send game action:', error.message);
+                }
+            }
+        }
+    }
+
+    // Get host peer ID
+    getHostPeerId() {
+        // Find the first connected peer (assuming it's the host if we're not)
+        for (const [peerId, dataChannel] of this.dataChannels) {
+            if (dataChannel.readyState === 'open') {
+                return peerId;
+            }
+        }
+        return null;
+    }
+
+    // Get all connected player IDs including self
+    getAllPlayerIds() {
+        const players = [this.peerId]; // Always include self
+        for (const [peerId, dataChannel] of this.dataChannels) {
+            if (dataChannel.readyState === 'open') {
+                players.push(peerId);
+            }
+        }
+        return players;
+    }
+
+    // Check if we're in a multiplayer session
+    isMultiplayer() {
+        return this.connectedPlayers.size > 0 || this.dataChannels.size > 0;
+    }
+
+    // Get current player count
+    getPlayerCount() {
+        if (this.isHost) {
+            return this.connectedPlayers.size + 1; // +1 for host
+        } else {
+            return this.dataChannels.size + 1; // +1 for self
+        }
+    }
+
+    // Future decoupling helper methods
+
+    // Set game engine for delegated game logic processing
+    setGameEngine(gameEngine) {
+        this.gameEngine = gameEngine;
+        console.log('[P2P] Game engine attached:', gameEngine.constructor.name);
+    }
+
+    // Pure network message broadcasting (game-agnostic)
+    broadcastNetworkMessage(messageType, payload, excludePeerId = null) {
+        this.broadcast({
+            type: messageType,
+            payload: payload,
+            timestamp: Date.now()
+        }, excludePeerId);
+    }
+
+    // Pure network message sending (game-agnostic)
+    sendNetworkMessage(peerId, messageType, payload) {
+        try {
+            this.sendToPlayer(peerId, {
+                type: messageType,
+                payload: payload,
+                timestamp: Date.now()
+            });
+            return true;
+        } catch (error) {
+            console.warn('[P2P] Failed to send network message:', error.message);
+            return false;
+        }
+    }
+
     // Game loop integration
     update(deltaTime) {
-        // Update local game server if hosting
-        if (this.isHost && this.localGameServer) {
-            this.localGameServer.processGameTick(deltaTime);
+        // TODO: DECOUPLE - This should delegate to this.gameEngine.update()
+        // Network manager should only handle connection state and message routing
 
-            // Broadcast game state to all connected peers
-            const gameState = this.localGameServer.getGameState();
-            if (gameState) {
-                this.broadcast({
-                    type: 'game_state',
-                    gameState: gameState,
-                    timestamp: Date.now()
-                });
+        // Update P2P game simulation if hosting (TEMPORARY - should be in GameEngine)
+        if (this.isHost && this.connectedPlayers.size > 0) {
+            const now = Date.now();
+            this.gameSimulation.gameTime += deltaTime;
+
+            // Update projectiles
+            for (let i = this.gameSimulation.projectiles.length - 1; i >= 0; i--) {
+                const proj = this.gameSimulation.projectiles[i];
+                proj.x += proj.vx * (deltaTime / 1000);
+                proj.y += proj.vy * (deltaTime / 1000);
+
+                // Remove off-screen or old projectiles
+                if (proj.x < -50 || proj.x > 850 || proj.y < -50 || proj.y > 650 ||
+                    (now - proj.createdAt) > 5000) {
+                    this.gameSimulation.projectiles.splice(i, 1);
+                }
+            }
+
+            // Clean up old player data
+            for (const [playerId, player] of this.gameSimulation.players) {
+                if (!this.connectedPlayers.has(playerId) || (now - player.lastUpdate) > 30000) {
+                    console.log('[P2P] Removing stale player data:', playerId);
+                    this.gameSimulation.players.delete(playerId);
+                }
+            }
+
+            // Broadcast game state every 100ms (10 FPS for network)
+            if (!this.lastStateBroadcast || (now - this.lastStateBroadcast) > 100) {
+                const gameState = this.getGameSimulationState();
+                if (gameState) {
+                    this.broadcast({
+                        type: 'gameStateSync',
+                        gameTime: this.gameSimulation.gameTime,
+                        players: gameState.players,
+                        projectiles: gameState.projectiles,
+                        timestamp: now
+                    });
+                }
+                this.lastStateBroadcast = now;
             }
         }
     }
