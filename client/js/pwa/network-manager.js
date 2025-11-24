@@ -261,26 +261,48 @@ class NetworkManager {
             // Create peer connection to host
             await this.connectToPeer(hostPeerId);
 
-            // Wait for connection to be established
+            // Wait for connection to be established and join to be accepted
             const result = await new Promise((resolve, reject) => {
                 const timeout = setTimeout(() => {
+                    this.pendingJoinResolve = null;
+                    this.pendingJoinReject = null;
                     reject(new Error('Connection timeout'));
-                }, 10000);
+                }, 15000); // Increased timeout for join process
+
+                // Store resolve/reject for join response handler
+                this.pendingJoinResolve = (peerId) => {
+                    clearTimeout(timeout);
+                    resolve(peerId);
+                };
+                this.pendingJoinReject = (error) => {
+                    clearTimeout(timeout);
+                    reject(error);
+                };
 
                 const checkConnection = () => {
                     const connection = this.connections.get(hostPeerId);
-                    if (connection && connection.connectionState === 'connected') {
-                        clearTimeout(timeout);
-
-                        // Send join request
+                    const dataChannel = this.dataChannels.get(hostPeerId);
+                    
+                    console.log('[P2P] Connection check - PC state:', connection?.connectionState, 'DC state:', dataChannel?.readyState);
+                    
+                    // Check if both peer connection and data channel are ready
+                    if (connection && dataChannel && 
+                        (connection.connectionState === 'connected' || connection.connectionState === 'connecting') &&
+                        dataChannel.readyState === 'open') {
+                        
+                        // Send join request - response will be handled by handleJoinResponse
+                        console.log('[P2P] Connection ready, sending join request...');
                         this.sendToPlayer(hostPeerId, {
                             type: 'join_request',
                             playerId: this.peerId
                         });
-
-                        resolve(hostPeerId);
-                    } else if (connection && connection.connectionState === 'failed') {
+                        
+                        // Don't resolve yet - wait for join_response
+                        return;
+                    } else if (connection && (connection.connectionState === 'failed' || connection.connectionState === 'disconnected')) {
                         clearTimeout(timeout);
+                        this.pendingJoinResolve = null;
+                        this.pendingJoinReject = null;
                         reject(new Error('Connection failed'));
                     } else {
                         setTimeout(checkConnection, 100);
@@ -462,6 +484,10 @@ class NetworkManager {
                 this.handleJoinRequest(message, fromPeerId);
                 break;
 
+            case 'join_response':
+                this.handleJoinResponse(message, fromPeerId);
+                break;
+
             case 'player_update':
                 this.handlePlayerUpdate(message, fromPeerId);
                 break;
@@ -487,12 +513,46 @@ class NetworkManager {
     handleJoinRequest(message, fromPeerId) {
         if (this.isHost && this.localGameServer) {
             const success = this.localGameServer.joinGame(0, fromPeerId); // Assuming single game
+            console.log('[P2P] Join request from', fromPeerId, '- Success:', success);
 
             this.sendToPlayer(fromPeerId, {
                 type: 'join_response',
                 success: success,
                 gameState: success ? this.localGameServer.getGameState() : null
             });
+        }
+    }
+
+    handleJoinResponse(message, fromPeerId) {
+        console.log('[P2P] Join response from host:', message.success);
+        
+        if (message.success) {
+            console.log('[P2P] Successfully joined game!');
+            console.log('[P2P] Game state:', message.gameState);
+            
+            // Notify connection completion
+            if (this.pendingJoinResolve) {
+                this.pendingJoinResolve(fromPeerId);
+                this.pendingJoinResolve = null;
+            }
+            
+            // Notify UI of successful join
+            if (this.onConnectionResult) {
+                this.onConnectionResult(true, 'Joined game successfully');
+            }
+        } else {
+            console.log('[P2P] Join request rejected');
+            
+            // Notify connection failure
+            if (this.pendingJoinReject) {
+                this.pendingJoinReject(new Error('Join request rejected'));
+                this.pendingJoinReject = null;
+            }
+            
+            // Notify UI of failure
+            if (this.onConnectionResult) {
+                this.onConnectionResult(false, 'Join request rejected');
+            }
         }
     }
 
