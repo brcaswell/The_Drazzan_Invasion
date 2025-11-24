@@ -429,14 +429,27 @@ class NetworkManager {
 
         const pc = this.connections.get(fromPeerId);
         if (pc) {
-            await pc.setRemoteDescription(answer);
+            // Only set remote description if we're in the right state
+            if (pc.signalingState === 'have-local-offer') {
+                await pc.setRemoteDescription(answer);
+                console.log('[P2P] Answer processed, connection state:', pc.connectionState);
+            } else {
+                console.log('[P2P] Ignoring duplicate answer, current state:', pc.signalingState);
+            }
         }
     }
 
     async handleIceCandidate(candidate, fromPeerId) {
         const pc = this.connections.get(fromPeerId);
-        if (pc) {
-            await pc.addIceCandidate(candidate);
+        if (pc && pc.remoteDescription) {
+            try {
+                await pc.addIceCandidate(candidate);
+                console.log('[P2P] ICE candidate added for', fromPeerId);
+            } catch (error) {
+                console.log('[P2P] Failed to add ICE candidate:', error.message);
+            }
+        } else {
+            console.log('[P2P] Ignoring ICE candidate, no remote description set yet');
         }
     }
 
